@@ -1,0 +1,37 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>7.&nbsp;Volumes and Volume Mounts</title><link rel="stylesheet" type="text/css" href="css/manual-multipage.css"><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="Spring Cloud Data Flow Server for OpenShift"><link rel="up" href="features.html" title="Part&nbsp;II.&nbsp;Features"><link rel="prev" href="_build_hashing_for_maven_resource_apps.html" title="6.&nbsp;Build Hashing for Maven Resource Apps"><link rel="next" href="getting-started.html" title="Part&nbsp;III.&nbsp;Getting Started"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">7.&nbsp;Volumes and Volume Mounts</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="_build_hashing_for_maven_resource_apps.html">Prev</a>&nbsp;</td><th width="60%" align="center">Part&nbsp;II.&nbsp;Features</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="getting-started.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="_volumes_and_volume_mounts" href="#_volumes_and_volume_mounts"></a>7.&nbsp;Volumes and Volume Mounts</h2></div></div></div><p>Volumes and volume mounts provide the ability for a Spring Cloud Stream application to access persistent storage
+made available on the OpenShift cluster. The supported volume and volume mount types are determined by the
+underlying <a class="link" href="https://github.com/fabric8io/kubernetes-model" target="_top">kubernetes-model</a> library. All of the volume types
+that have a generated mode are supported.</p><p>Volumes and volume mounts can be specified as server deployer properties as well as app deployment properties specified
+at deployment time. Both ways of defining the volumes and volume mounts are identical, where they are specified as a JSON
+representation of the kubernetes-client model.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Volumes and volume mounts defined at deployer level will be added to <span class="emphasis"><em>all</em></span> deployed apps. This is handy for
+common shared folders that should be available to all apps.</p></td></tr></table></div><p>Below is an example of a volumes and volume mounts defined as a server deployer property in the ConfigMap:</p><pre class="programlisting"><span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">spring.cloud.deployer.openshift</span>:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">  volumes</span>:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">    - name</span>: testhostpath
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      hostPath</span>:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">        path</span>: /test/hostPath
+
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">    - name</span>: testpvc
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      persistentVolumeClaim</span>:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">        claimName</span>: testClaim
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">        readOnly</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">true</span>
+
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">    - name</span>: testnfs
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      nfs</span>:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">        server</span>: <span class="hl-number">10.0</span>.<span class="hl-number">0.1</span>:<span class="hl-number">111</span>
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">        path</span>: /test/nfs
+
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">  volumeMounts</span>:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">    - name</span>: testhostpath:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      mountPath</span>: /test/hostPath
+
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">    - name</span>: testpvc:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      mountPath</span>: /test/pvc
+
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">    - name</span>: testnfs:
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      mountPath</span>: /test/nfs
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-attribute">      readOnly</span>: <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">true</span></pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>The default value for <code class="literal">readOnly</code> is <code class="literal">false</code>. I.e. Container requests read/write access.</p></td></tr></table></div><p>Examples of the deployment property (via the Data Flow Shell) variation of defining volumes and volume mounts below:</p><pre class="programlisting">dataflow:&gt;stream create --name test --definition "time | file"
+Created new stream 'timezoney'
+
+dataflow:&gt;stream deploy test --properties "app.file.spring.cloud.deployer.openshift.deployment.volumes=[{name: testhostpath, hostPath: { path: '/test/override/hostPath' }}],spring.cloud.deployer.openshift.deployment.volumeMounts=[{name: 'testhostpath', mountPath: '/test/hostPath'}]"</pre></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="_build_hashing_for_maven_resource_apps.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="u" href="features.html">Up</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="getting-started.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">6.&nbsp;Build Hashing for Maven Resource Apps&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;Part&nbsp;III.&nbsp;Getting Started</td></tr></table></div></body></html>
