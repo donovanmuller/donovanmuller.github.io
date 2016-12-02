@@ -903,7 +903,7 @@ environments where these existing resources are already deployed.</p>
 </li>
 <li>
 <p><a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.1.0.RELEASE/src/etc/openshift/scdf-ephemeral-datasources-template.yaml">Data Flow Server with ephemeral Datasources</a> -
-Deploys Data Flow Server for OpenShift as well as Postgres and Redis containers without persistent volumes.
+Deploys Data Flow Server for OpenShift as well as MySQL and Redis containers without persistent volumes.
 I.e. the data persisted by these containers will be lost on restart.</p>
 </li>
 <li>
@@ -1121,9 +1121,16 @@ The UI is mapped to <code>/dashboard</code>
 </tr>
 </table>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
 <div class="paragraph">
-<p>If you&#8217;d like to reset and use another template.
-Remove all Data Flow resources created by the template you can execute these commands:</p>
+<p>If you&#8217;d like to reset or perhaps try another template, you can remove the Data Flow Server and other
+resources created by the template with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1131,6 +1138,10 @@ Remove all Data Flow resources created by the template you can execute these com
 $ oc delete cm --selector=template=scdf
 $ oc delete secret --selector=template=scdf</code></pre>
 </div>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -1248,9 +1259,9 @@ but using the Maven resource versions of the apps.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app register --type source --name time-mvn --uri maven://org.springframework.cloud.stream.app:time-source-kafka:1.1.0.RELEASE
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:>app register --type source --name time-mvn --uri maven://org.springframework.cloud.stream.app:time-source-kafka:1.1.0.RELEASE
 Successfully registered application 'source:time-mvn'
-dataflow:&gt;app register --type sink --name log-mvn --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.1.0.RELEASE
+dataflow:>app register --type sink --name log-mvn --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.1.0.RELEASE
 Successfully registered application 'sink:log-mvn'</code></pre>
 </div>
 </div>
@@ -1676,7 +1687,7 @@ Deployment request has been sent for stream 'test'</code></pre>
 <td class="tableblock halign-left valign-top"><p class="tableblock">An inline <a href="https://docs.docker.com/engine/reference/builder/">Dockerfile</a> that will be used to build the Docker image. Only applicable to Maven resource apps</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default Provided Dockerfile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node Selector</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.nodeSelector=region: primary,role: streams</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of node selectors (in the form name: value) which will determine where the app&#8217;s Pod&#8217;s <a href="https://docs.openshift.org/latest/dev_guide/deployments/basic_deployment_operations.html#assigning-pods-to-specific-nodes">get assigned</a></p></td>
 </tr>
@@ -1748,7 +1759,7 @@ This means that the custom app must be deployed to an accessible Maven repositor
 <div class="paragraph">
 <p>Assuming the local minishift OpenShift environment discussed in the <a href="#getting-started">Getting Started</a> section, we will deploy
 a Nexus container to which we can deploy our custom application. Deploying the Nexus image is trivial thanks to
-an OpenShift template <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.1.0.RELEASE/src/etc/openshift/nexus-template.yaml">available here</a>.</p>
+an OpenShift template <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.1.0.RELEASE/src/etc/openshift/nexus-template.yaml">available here</a>.</p>
 </div>
 <div class="admonitionblock note">
 <table>
