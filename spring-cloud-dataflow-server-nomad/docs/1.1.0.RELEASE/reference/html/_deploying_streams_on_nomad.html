@@ -1,0 +1,136 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>9.&nbsp;Deploying Streams on Nomad</title><link rel="stylesheet" type="text/css" href="css/manual-multipage.css"><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="Spring Cloud Data Flow Server for Nomad"><link rel="up" href="getting-started.html" title="Part&nbsp;III.&nbsp;Getting Started"><link rel="prev" href="getting-started.html" title="Part&nbsp;III.&nbsp;Getting Started"><link rel="next" href="_deploying_tasks_on_nomad.html" title="10.&nbsp;Deploying Tasks on Nomad"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">9.&nbsp;Deploying Streams on Nomad</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="getting-started.html">Prev</a>&nbsp;</td><th width="60%" align="center">Part&nbsp;III.&nbsp;Getting Started</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="_deploying_tasks_on_nomad.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a name="_deploying_streams_on_nomad" href="#_deploying_streams_on_nomad"></a>9.&nbsp;Deploying Streams on Nomad</h2></div></div></div><p>The following guide assumes that you have a <a class="link" href="https://www.nomadproject.io/" target="_top">Nomad 0.5+</a> cluster available.
+If you do not have a Nomad cluster available, see the next section which describes running a local Nomad for development/testing
+otherwise continue to <a class="xref" href="_deploying_streams_on_nomad.html#installing-scdf" title="9.2&nbsp;Installing the Data Flow Server for Nomad">Section&nbsp;9.2, &#8220;Installing the Data Flow Server for Nomad&#8221;</a>.</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_a_local_nomad_cluster_with_vagrant_hashistack" href="#_a_local_nomad_cluster_with_vagrant_hashistack"></a>9.1&nbsp;A local Nomad cluster with Vagrant Hashistack</h2></div></div></div><p>There are a few ways to stand up a local Nomad cluster on your machine for testing.
+For the purpose of this guide, the <a class="link" href="https://github.com/donovanmuller/hashistack-vagrant" target="_top">hashistack-vagrant</a> project will be used.</p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Important"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Important]" src="images/important.png"></td><th align="left">Important</th></tr><tr><td align="left" valign="top"><p>The <code class="literal">hashistack-vagrant</code> VM is configured by default with <code class="literal">2048 MB</code> of memory and <code class="literal">2</code> CPUs.
+If you run into issues with job allocations failing because of resource starvation, you can tweak the
+memory and CPU configuration in the <code class="literal">Vagrantfile</code>.</p><p>Please see the <a class="link" href="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/wiki/Resource-Allocations" target="_top">Resource Allocations</a>
+section in the <code class="literal">spring-cloud-dataflow-server-nomad</code> project Wiki for more information.</p></td></tr></table></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="_installation_and_getting_started" href="#_installation_and_getting_started"></a>9.1.1&nbsp;Installation and Getting Started</h3></div></div></div><p>Follow the <a class="link" href="https://github.com/donovanmuller/hashistack-vagrant#quickstart" target="_top">Quickstart</a>
+section of the <a class="link" href="https://github.com/donovanmuller/hashistack-vagrant" target="_top">hashistack-vagrant</a>.</p><p>Once you have successfully started the Vagrant VM and (with <code class="literal">tmuxp load full-hashistack.yml</code>) "hashistack",
+make sure you can use the <code class="literal">nomad</code> client to query the local instance:</p><pre class="programlisting">vagrant@hashistack:~$ nomad status
+No running jobs</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>You could also install the <code class="literal">nomad</code> binary locally and connect to the Nomad client running inside the VM. For example
+on Mac you could install Nomad with homebrew and add the <code class="literal">--address</code> option to your commands:</p><pre class="programlisting">$ brew install nomad
+...
+$ nomad status --address=http://172.16.0.2:4646
+ID    Type     Priority  Status
+scdf  service  50        running</pre></td></tr></table></div></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="installing-scdf" href="#installing-scdf"></a>9.2&nbsp;Installing the Data Flow Server for Nomad</h2></div></div></div><p>To install a Data Flow Server and supporting infrastructure components to Nomad we will use the provided Job specification provided
+in the <a class="link" href="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/tree/v1.1.0.RELEASE/src/etc/nomad" target="_top"><code class="literal">src/etc/nomad/</code></a>
+directory of the project&#8217;s GitHub repository.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>This Job requires the <a class="link" href="https://www.nomadproject.io/docs/drivers/docker.html" target="_top">Docker</a> driver.</p></td></tr></table></div><p>This job specification includes the following tasks:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">Spring Cloud Data Flow Server for Nomad</li><li class="listitem">MySQL - as the datasource for the Data Flow Server</li><li class="listitem">Redis - for analytics support</li><li class="listitem">Kafka - as the Spring Cloud Stream default binder implementation</li></ul></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>If you are not using the hashistack-vagrant VM, please adjust the <code class="literal">region</code> and <code class="literal">datacenters</code>
+values in the <code class="literal">scdf.nomad</code> job specification file accordingly.</p></td></tr></table></div><p>Next, using the SSH session to the VM, run the job with:</p><pre class="programlisting">vagrant@hashistack:~$ nomad run https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/nexus.nomad
+==&gt; Monitoring evaluation "67f078e6"
+    Evaluation triggered by job "scdf"
+    Allocation "966c4cbd" created: node "c99cf24d", group "scdfr"
+    Allocation "966c4cbd" status changed: "pending" -&gt; "running"
+    Evaluation status changed: "pending" -&gt; "complete"
+==&gt; Evaluation "67f078e6" finished with status "complete"</pre><p>Allow some time for the Docker images to be pulled and all containers to be started.
+You can verify that all tasks have been successfully started by checking the
+corresponding allocation status:</p><pre class="programlisting">vagrant@hashistack:~$ nomad alloc-status 966c4cbd
+ID                 = 3d235c82
+Eval ID            = 04164728
+Name               = scdf.scdf[0]
+Node ID            = 2dd82384
+Job ID             = scdf
+Client Status      = running
+Client Description = &lt;none&gt;
+Created At         = 12/13/16s 09:15:20 UTC
+
+Task "kafka" is "running"
+Task Resources
+CPU         Memory           Disk  IOPS  Addresses
+13/500 MHz  506 MiB/512 MiB  0 B   0     kafka: 10.0.2.15:9092
+
+Recent Events:
+Time                   Type        Description
+12/13/16 09:15:47 UTC  Started     Task started by client
+12/13/16 09:15:36 UTC  Restarting  Task restarting in 10.338625681s
+12/13/16 09:15:36 UTC  Terminated  Exit Code: 1, Exit Message: "Docker container exited with non-zero exit code: 1"
+12/13/16 09:15:35 UTC  Started     Task started by client
+12/13/16 09:15:24 UTC  Restarting  Task restarting in 10.118221449s
+12/13/16 09:15:24 UTC  Terminated  Exit Code: 1, Exit Message: "Docker container exited with non-zero exit code: 1"
+12/13/16 09:15:22 UTC  Started     Task started by client
+12/13/16 09:15:20 UTC  Received    Task received by client
+
+Task "mysql" is "running"
+Task Resources
+CPU        Memory           Disk  IOPS  Addresses
+2/500 MHz  115 MiB/128 MiB  0 B   0     db: 10.0.2.15:3306
+
+Recent Events:
+Time                   Type      Description
+12/13/16 09:15:22 UTC  Started   Task started by client
+12/13/16 09:15:20 UTC  Received  Task received by client
+
+Task "redis" is "running"
+Task Resources
+CPU        Memory          Disk  IOPS  Addresses
+2/256 MHz  6.2 MiB/64 MiB  0 B   0     redis: 10.0.2.15:6379
+
+Recent Events:
+Time                   Type      Description
+12/13/16 09:15:22 UTC  Started   Task started by client
+12/13/16 09:15:20 UTC  Received  Task received by client
+
+Task "scdf-server" is "running"
+Task Resources
+CPU        Memory           Disk  IOPS  Addresses
+3/500 MHz  304 MiB/384 MiB  0 B   0     http: 10.0.2.15:9393
+
+Recent Events:
+Time                   Type        Description
+12/13/16 09:15:42 UTC  Started     Task started by client
+...
+
+Task "zookeeper" is "running"
+Task Resources
+CPU        Memory          Disk  IOPS  Addresses
+3/500 MHz  84 MiB/128 MiB  0 B   0     zookeeper: 10.0.2.15:2181
+                                       follower: 10.0.2.15:2888
+                                       leader: 10.0.2.15:3888
+
+...</pre><p>or alternatively check the health status of all services using the Consul UI:</p><div class="informalfigure"><div class="mediaobject"><img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/raw/master/spring-cloud-dataflow-server-nomad-docs/src/main/asciidoc/images/scdf-nomad-up.png" alt="Data Flow Server and components up"></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>If you are using a local <code class="literal">nomad</code> binary you can reference the remote <code class="literal">scdf.nomad</code> file directly.</p><pre class="programlisting">$ nomad run --address=http://172.16.0.2:4646 https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/scdf.nomad
+...</pre></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_download_and_run_the_spring_cloud_data_flow_shell" href="#_download_and_run_the_spring_cloud_data_flow_shell"></a>9.3&nbsp;Download and run the Spring Cloud Data Flow Shell</h2></div></div></div><p>Download and run the Shell, targeting the Data Flow Server exposed via a Fabio route.</p><pre class="programlisting">$ wget http://repo.spring.io/release/org/springframework/cloud/spring-cloud-dataflow-shell/1.1.0.RELEASE/spring-cloud-dataflow-shell-1.1.0.RELEASE.jar
+$ java -jar spring-cloud-dataflow-shell-1.1.0.RELEASE.jar --dataflow.uri=http://scdf-server.hashistack.vagrant/
+
+  ____                              ____ _                __
+ / ___| _ __  _ __(_)_ __   __ _   / ___| | ___  _   _  __| |
+ \___ \| '_ \| '__| | '_ \ / _` | | |   | |/ _ \| | | |/ _` |
+  ___) | |_) | |  | | | | | (_| | | |___| | (_) | |_| | (_| |
+ |____/| .__/|_|  |_|_| |_|\__, |  \____|_|\___/ \__,_|\__,_|
+  ____ |_|    _          __|___/                 __________
+ |  _ \  __ _| |_ __ _  |  ___| | _____      __  \ \ \ \ \ \
+ | | | |/ _` | __/ _` | | |_  | |/ _ \ \ /\ / /   \ \ \ \ \ \
+ | |_| | (_| | || (_| | |  _| | | (_) \ V  V /    / / / / / /
+ |____/ \__,_|\__\__,_| |_|   |_|\___/ \_/\_/    /_/_/_/_/_/
+
+1.1.0.RELEASE
+
+Welcome to the Spring Cloud Data Flow shell. For assistance hit TAB or type "help".
+dataflow:&gt;</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_registering_stream_applications_with_docker_resource" href="#_registering_stream_applications_with_docker_resource"></a>9.4&nbsp;Registering Stream applications with Docker resource</h2></div></div></div><p>Now register all out-of-the-box stream applications using the Docker resource type, built with the Kafka binder in bulk with the following command.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>For more details, review how to <a class="link" href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/html/spring-cloud-dataflow-register-apps.html" target="_top">register applications</a>.</p></td></tr></table></div><pre class="programlisting">dataflow:&gt;app import --uri http://bit.ly/stream-applications-kafka-docker
+Successfully registered applications: [source.tcp, sink.jdbc, source.http, sink.rabbit, source.rabbit, source.ftp, sink.gpfdist, processor.transform, source.loggregator, source.sftp, processor.filter, sink.cassandra, processor.groovy-filter, sink.router, source.trigger, sink.hdfs-dataset, processor.splitter, source.load-generator, processor.tcp-client, source.time, source.gemfire, source.twitterstream, sink.tcp, source.jdbc, sink.field-value-counter, sink.redis-pubsub, sink.hdfs, processor.bridge, processor.pmml, processor.httpclient, source.s3, sink.ftp, sink.log, sink.gemfire, sink.aggregate-counter, sink.throughput, source.triggertask, sink.s3, source.gemfire-cq, source.jms, source.tcp-client, processor.scriptable-transform, sink.counter, sink.websocket, source.mongodb, source.mail, processor.groovy-transform, source.syslog]</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_deploy_a_simple_stream_in_the_shell" href="#_deploy_a_simple_stream_in_the_shell"></a>9.5&nbsp;Deploy a simple stream in the shell</h2></div></div></div><p>Create a simple <code class="literal">ticktock</code> stream definition and deploy it immediately using the following command:</p><pre class="programlisting">dataflow:&gt;stream create --name ticktock --definition "time | log" --deploy
+Created new stream 'ticktock'
+Deployment request has been sent</pre><p>Verify the deployed apps using the by checking the status of the apps using the Shell:</p><div class="informalfigure"><div class="mediaobject"><img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/raw/master/spring-cloud-dataflow-server-nomad-docs/src/main/asciidoc/images/scdf-nomad-stream-deployed.png" alt="ticktock streamd deployed"></div></div><p>To verify that the stream is working as expected, tail the logs of the <code class="literal">ticktock-log</code> using <code class="literal">nomad</code>:</p><pre class="programlisting">vagrant@hashistack:~$ nomad logs 71f7aba1
+...
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:49:59
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:01
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:02
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:03
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:04
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:05
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:06
+...</pre></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_registering_stream_applications_with_maven_resource" href="#_registering_stream_applications_with_maven_resource"></a>9.6&nbsp;Registering Stream applications with Maven resource</h2></div></div></div><p>The Data Flow Server for Nomad also supports apps registered with a Maven resource URI
+in addition to the Docker resource type. Using the <code class="literal">ticktock</code> stream example above, we will create a similar stream definition
+but using the Maven resource versions of the apps.</p><p>For this example we will register the apps individually using the following command:</p><pre class="programlisting">dataflow:&gt;app register --type source --name time-mvn --uri maven://org.springframework.cloud.stream.app:time-source-kafka:1.1.0.RELEASE
+Successfully registered application 'source:time-mvn'
+dataflow:&gt;app register --type sink --name log-mvn --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.1.0.RELEASE
+Successfully registered application 'sink:log-mvn'</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>We couldn&#8217;t bulk import the Maven version of the apps as we did for the Docker versions because the app names
+would conflict, as the names defined in the bulk import files are the same across resource types. Hence we register the
+Maven apps with a <code class="literal">-mvn</code> suffix.</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_deploy_a_simple_stream_in_the_shell_2" href="#_deploy_a_simple_stream_in_the_shell_2"></a>9.7&nbsp;Deploy a simple stream in the shell</h2></div></div></div><p>Create a simple <code class="literal">ticktock-mvn</code> stream definition and deploy it immediately using the following command:</p><pre class="programlisting">dataflow:&gt;stream create --name ticktock-mvn --definition "time-mvn | log-mvn" --deploy
+Created new stream 'ticktock-mvn'
+Deployment request has been sent</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>There could be a slight delay once the above command is issued. This is due to the Maven artifacts being
+resolved and cached locally. Depending on the size of the artifacts, this could take some time.</p></td></tr></table></div><p>To verify that the stream is working as expected, tail the logs of the <code class="literal">ticktock-mvn-log-mvn</code> using <code class="literal">nomad</code>:</p><pre class="programlisting">$ nomad logs -f 3f474cc7
+...
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:23
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:25
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:26
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:27</pre></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="getting-started.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="u" href="getting-started.html">Up</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="_deploying_tasks_on_nomad.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Part&nbsp;III.&nbsp;Getting Started&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;10.&nbsp;Deploying Tasks on Nomad</td></tr></table></div></body></html>

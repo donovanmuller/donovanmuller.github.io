@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.3">
+<meta name="author" content="Donovan Muller">
+<title>Spring Cloud Data Flow Server for Nomad</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<style>
+/* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
+/* Remove comment around @import statement below when using as a custom stylesheet */
+/*@import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700";*/
+article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}
+audio,canvas,video{display:inline-block}
+audio:not([controls]){display:none;height:0}
+[hidden],template{display:none}
+script{display:none!important}
+html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{margin:0}
+a{background:transparent}
+a:focus{outline:thin dotted}
+a:active,a:hover{outline:0}
+h1{font-size:2em;margin:.67em 0}
+abbr[title]{border-bottom:1px dotted}
+b,strong{font-weight:bold}
+dfn{font-style:italic}
+hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}
+mark{background:#ff0;color:#000}
+code,kbd,pre,samp{font-family:monospace;font-size:1em}
+pre{white-space:pre-wrap}
+q{quotes:"\201C" "\201D" "\2018" "\2019"}
+small{font-size:80%}
+sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}
+sup{top:-.5em}
+sub{bottom:-.25em}
+img{border:0}
+svg:not(:root){overflow:hidden}
+figure{margin:0}
+fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}
+legend{border:0;padding:0}
+button,input,select,textarea{font-family:inherit;font-size:100%;margin:0}
+button,input{line-height:normal}
+button,select{text-transform:none}
+button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}
+button[disabled],html input[disabled]{cursor:default}
+input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}
+input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}
+input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}
+button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}
+textarea{overflow:auto;vertical-align:top}
+table{border-collapse:collapse;border-spacing:0}
+*,*:before,*:after{-moz-box-sizing:border-box;-webkit-box-sizing:border-box;box-sizing:border-box}
+html,body{font-size:100%}
+body{background:#fff;color:rgba(0,0,0,.8);padding:0;margin:0;font-family:"Noto Serif","DejaVu Serif",serif;font-weight:400;font-style:normal;line-height:1;position:relative;cursor:auto}
+a:hover{cursor:pointer}
+img,object,embed{max-width:100%;height:auto}
+object,embed{height:100%}
+img{-ms-interpolation-mode:bicubic}
+.left{float:left!important}
+.right{float:right!important}
+.text-left{text-align:left!important}
+.text-right{text-align:right!important}
+.text-center{text-align:center!important}
+.text-justify{text-align:justify!important}
+.hide{display:none}
+body{-webkit-font-smoothing:antialiased}
+img,object,svg{display:inline-block;vertical-align:middle}
+textarea{height:auto;min-height:50px}
+select{width:100%}
+.center{margin-left:auto;margin-right:auto}
+.spread{width:100%}
+p.lead,.paragraph.lead>p,#preamble>.sectionbody>.paragraph:first-of-type p{font-size:1.21875em;line-height:1.6}
+.subheader,.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{line-height:1.45;color:#7a2518;font-weight:400;margin-top:0;margin-bottom:.25em}
+div,dl,dt,dd,ul,ol,li,h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6,pre,form,p,blockquote,th,td{margin:0;padding:0;direction:ltr}
+a{color:#2156a5;text-decoration:underline;line-height:inherit}
+a:hover,a:focus{color:#1d4b8f}
+a img{border:none}
+p{font-family:inherit;font-weight:400;font-size:1em;line-height:1.6;margin-bottom:1.25em;text-rendering:optimizeLegibility}
+p aside{font-size:.875em;line-height:1.35;font-style:italic}
+h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{font-family:"Open Sans","DejaVu Sans",sans-serif;font-weight:300;font-style:normal;color:#ba3925;text-rendering:optimizeLegibility;margin-top:1em;margin-bottom:.5em;line-height:1.0125em}
+h1 small,h2 small,h3 small,#toctitle small,.sidebarblock>.content>.title small,h4 small,h5 small,h6 small{font-size:60%;color:#e99b8f;line-height:0}
+h1{font-size:2.125em}
+h2{font-size:1.6875em}
+h3,#toctitle,.sidebarblock>.content>.title{font-size:1.375em}
+h4,h5{font-size:1.125em}
+h6{font-size:1em}
+hr{border:solid #ddddd8;border-width:1px 0 0;clear:both;margin:1.25em 0 1.1875em;height:0}
+em,i{font-style:italic;line-height:inherit}
+strong,b{font-weight:bold;line-height:inherit}
+small{font-size:60%;line-height:inherit}
+code{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;color:rgba(0,0,0,.9)}
+ul,ol,dl{font-size:1em;line-height:1.6;margin-bottom:1.25em;list-style-position:outside;font-family:inherit}
+ul,ol,ul.no-bullet,ol.no-bullet{margin-left:1.5em}
+ul li ul,ul li ol{margin-left:1.25em;margin-bottom:0;font-size:1em}
+ul.square li ul,ul.circle li ul,ul.disc li ul{list-style:inherit}
+ul.square{list-style-type:square}
+ul.circle{list-style-type:circle}
+ul.disc{list-style-type:disc}
+ul.no-bullet{list-style:none}
+ol li ul,ol li ol{margin-left:1.25em;margin-bottom:0}
+dl dt{margin-bottom:.3125em;font-weight:bold}
+dl dd{margin-bottom:1.25em}
+abbr,acronym{text-transform:uppercase;font-size:90%;color:rgba(0,0,0,.8);border-bottom:1px dotted #ddd;cursor:help}
+abbr{text-transform:none}
+blockquote{margin:0 0 1.25em;padding:.5625em 1.25em 0 1.1875em;border-left:1px solid #ddd}
+blockquote cite{display:block;font-size:.9375em;color:rgba(0,0,0,.6)}
+blockquote cite:before{content:"\2014 \0020"}
+blockquote cite a,blockquote cite a:visited{color:rgba(0,0,0,.6)}
+blockquote,blockquote p{line-height:1.6;color:rgba(0,0,0,.85)}
+@media only screen and (min-width:768px){h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2}
+h1{font-size:2.75em}
+h2{font-size:2.3125em}
+h3,#toctitle,.sidebarblock>.content>.title{font-size:1.6875em}
+h4{font-size:1.4375em}}
+table{background:#fff;margin-bottom:1.25em;border:solid 1px #dedede}
+table thead,table tfoot{background:#f7f8f7;font-weight:bold}
+table thead tr th,table thead tr td,table tfoot tr th,table tfoot tr td{padding:.5em .625em .625em;font-size:inherit;color:rgba(0,0,0,.8);text-align:left}
+table tr th,table tr td{padding:.5625em .625em;font-size:inherit;color:rgba(0,0,0,.8)}
+table tr.even,table tr.alt,table tr:nth-of-type(even){background:#f8f8f7}
+table thead tr th,table tfoot tr th,table tbody tr td,table tr td,table tfoot tr td{display:table-cell;line-height:1.6}
+body{tab-size:4}
+h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2;word-spacing:-.05em}
+h1 strong,h2 strong,h3 strong,#toctitle strong,.sidebarblock>.content>.title strong,h4 strong,h5 strong,h6 strong{font-weight:400}
+.clearfix:before,.clearfix:after,.float-group:before,.float-group:after{content:" ";display:table}
+.clearfix:after,.float-group:after{clear:both}
+*:not(pre)>code{font-size:.9375em;font-style:normal!important;letter-spacing:0;padding:.1em .5ex;word-spacing:-.15em;background-color:#f7f7f8;-webkit-border-radius:4px;border-radius:4px;line-height:1.45;text-rendering:optimizeSpeed}
+pre,pre>code{line-height:1.45;color:rgba(0,0,0,.9);font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;text-rendering:optimizeSpeed}
+.keyseq{color:rgba(51,51,51,.8)}
+kbd{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;display:inline-block;color:rgba(0,0,0,.8);font-size:.65em;line-height:1.45;background-color:#f7f7f7;border:1px solid #ccc;-webkit-border-radius:3px;border-radius:3px;-webkit-box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em white inset;box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em #fff inset;margin:0 .15em;padding:.2em .5em;vertical-align:middle;position:relative;top:-.1em;white-space:nowrap}
+.keyseq kbd:first-child{margin-left:0}
+.keyseq kbd:last-child{margin-right:0}
+.menuseq,.menu{color:rgba(0,0,0,.8)}
+b.button:before,b.button:after{position:relative;top:-1px;font-weight:400}
+b.button:before{content:"[";padding:0 3px 0 2px}
+b.button:after{content:"]";padding:0 2px 0 3px}
+p a>code:hover{color:rgba(0,0,0,.9)}
+#header,#content,#footnotes,#footer{width:100%;margin-left:auto;margin-right:auto;margin-top:0;margin-bottom:0;max-width:62.5em;*zoom:1;position:relative;padding-left:.9375em;padding-right:.9375em}
+#header:before,#header:after,#content:before,#content:after,#footnotes:before,#footnotes:after,#footer:before,#footer:after{content:" ";display:table}
+#header:after,#content:after,#footnotes:after,#footer:after{clear:both}
+#content{margin-top:1.25em}
+#content:before{content:none}
+#header>h1:first-child{color:rgba(0,0,0,.85);margin-top:2.25rem;margin-bottom:0}
+#header>h1:first-child+#toc{margin-top:8px;border-top:1px solid #ddddd8}
+#header>h1:only-child,body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #ddddd8;padding-bottom:8px}
+#header .details{border-bottom:1px solid #ddddd8;line-height:1.45;padding-top:.25em;padding-bottom:.25em;padding-left:.25em;color:rgba(0,0,0,.6);display:-ms-flexbox;display:-webkit-flex;display:flex;-ms-flex-flow:row wrap;-webkit-flex-flow:row wrap;flex-flow:row wrap}
+#header .details span:first-child{margin-left:-.125em}
+#header .details span.email a{color:rgba(0,0,0,.85)}
+#header .details br{display:none}
+#header .details br+span:before{content:"\00a0\2013\00a0"}
+#header .details br+span.author:before{content:"\00a0\22c5\00a0";color:rgba(0,0,0,.85)}
+#header .details br+span#revremark:before{content:"\00a0|\00a0"}
+#header #revnumber{text-transform:capitalize}
+#header #revnumber:after{content:"\00a0"}
+#content>h1:first-child:not([class]){color:rgba(0,0,0,.85);border-bottom:1px solid #ddddd8;padding-bottom:8px;margin-top:0;padding-top:1rem;margin-bottom:1.25rem}
+#toc{border-bottom:1px solid #efefed;padding-bottom:.5em}
+#toc>ul{margin-left:.125em}
+#toc ul.sectlevel0>li>a{font-style:italic}
+#toc ul.sectlevel0 ul.sectlevel1{margin:.5em 0}
+#toc ul{font-family:"Open Sans","DejaVu Sans",sans-serif;list-style-type:none}
+#toc li{line-height:1.3334;margin-top:.3334em}
+#toc a{text-decoration:none}
+#toc a:active{text-decoration:underline}
+#toctitle{color:#7a2518;font-size:1.2em}
+@media only screen and (min-width:768px){#toctitle{font-size:1.375em}
+body.toc2{padding-left:15em;padding-right:0}
+#toc.toc2{margin-top:0!important;background-color:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #efefed;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
+#toc.toc2 #toctitle{margin-top:0;margin-bottom:.8rem;font-size:1.2em}
+#toc.toc2>ul{font-size:.9em;margin-bottom:0}
+#toc.toc2 ul ul{margin-left:0;padding-left:1em}
+#toc.toc2 ul.sectlevel0 ul.sectlevel1{padding-left:0;margin-top:.5em;margin-bottom:.5em}
+body.toc2.toc-right{padding-left:0;padding-right:15em}
+body.toc2.toc-right #toc.toc2{border-right-width:0;border-left:1px solid #efefed;left:auto;right:0}}
+@media only screen and (min-width:1280px){body.toc2{padding-left:20em;padding-right:0}
+#toc.toc2{width:20em}
+#toc.toc2 #toctitle{font-size:1.375em}
+#toc.toc2>ul{font-size:.95em}
+#toc.toc2 ul ul{padding-left:1.25em}
+body.toc2.toc-right{padding-left:0;padding-right:20em}}
+#content #toc{border-style:solid;border-width:1px;border-color:#e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;-webkit-border-radius:4px;border-radius:4px}
+#content #toc>:first-child{margin-top:0}
+#content #toc>:last-child{margin-bottom:0}
+#footer{max-width:100%;background-color:rgba(0,0,0,.8);padding:1.25em}
+#footer-text{color:rgba(255,255,255,.8);line-height:1.44}
+.sect1{padding-bottom:.625em}
+@media only screen and (min-width:768px){.sect1{padding-bottom:1.25em}}
+.sect1+.sect1{border-top:1px solid #efefed}
+#content h1>a.anchor,h2>a.anchor,h3>a.anchor,#toctitle>a.anchor,.sidebarblock>.content>.title>a.anchor,h4>a.anchor,h5>a.anchor,h6>a.anchor{position:absolute;z-index:1001;width:1.5ex;margin-left:-1.5ex;display:block;text-decoration:none!important;visibility:hidden;text-align:center;font-weight:400}
+#content h1>a.anchor:before,h2>a.anchor:before,h3>a.anchor:before,#toctitle>a.anchor:before,.sidebarblock>.content>.title>a.anchor:before,h4>a.anchor:before,h5>a.anchor:before,h6>a.anchor:before{content:"\00A7";font-size:.85em;display:block;padding-top:.1em}
+#content h1:hover>a.anchor,#content h1>a.anchor:hover,h2:hover>a.anchor,h2>a.anchor:hover,h3:hover>a.anchor,#toctitle:hover>a.anchor,.sidebarblock>.content>.title:hover>a.anchor,h3>a.anchor:hover,#toctitle>a.anchor:hover,.sidebarblock>.content>.title>a.anchor:hover,h4:hover>a.anchor,h4>a.anchor:hover,h5:hover>a.anchor,h5>a.anchor:hover,h6:hover>a.anchor,h6>a.anchor:hover{visibility:visible}
+#content h1>a.link,h2>a.link,h3>a.link,#toctitle>a.link,.sidebarblock>.content>.title>a.link,h4>a.link,h5>a.link,h6>a.link{color:#ba3925;text-decoration:none}
+#content h1>a.link:hover,h2>a.link:hover,h3>a.link:hover,#toctitle>a.link:hover,.sidebarblock>.content>.title>a.link:hover,h4>a.link:hover,h5>a.link:hover,h6>a.link:hover{color:#a53221}
+.audioblock,.imageblock,.literalblock,.listingblock,.stemblock,.videoblock{margin-bottom:1.25em}
+.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{text-rendering:optimizeLegibility;text-align:left;font-family:"Noto Serif","DejaVu Serif",serif;font-size:1rem;font-style:italic}
+table.tableblock>caption.title{white-space:nowrap;overflow:visible;max-width:0}
+.paragraph.lead>p,#preamble>.sectionbody>.paragraph:first-of-type p{color:rgba(0,0,0,.85)}
+table.tableblock #preamble>.sectionbody>.paragraph:first-of-type p{font-size:inherit}
+.admonitionblock>table{border-collapse:separate;border:0;background:none;width:100%}
+.admonitionblock>table td.icon{text-align:center;width:80px}
+.admonitionblock>table td.icon img{max-width:none}
+.admonitionblock>table td.icon .title{font-weight:bold;font-family:"Open Sans","DejaVu Sans",sans-serif;text-transform:uppercase}
+.admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #ddddd8;color:rgba(0,0,0,.6)}
+.admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}
+.exampleblock>.content{border-style:solid;border-width:1px;border-color:#e6e6e6;margin-bottom:1.25em;padding:1.25em;background:#fff;-webkit-border-radius:4px;border-radius:4px}
+.exampleblock>.content>:first-child{margin-top:0}
+.exampleblock>.content>:last-child{margin-bottom:0}
+.sidebarblock{border-style:solid;border-width:1px;border-color:#e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;-webkit-border-radius:4px;border-radius:4px}
+.sidebarblock>:first-child{margin-top:0}
+.sidebarblock>:last-child{margin-bottom:0}
+.sidebarblock>.content>.title{color:#7a2518;margin-top:0;text-align:center}
+.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
+.literalblock pre,.listingblock pre:not(.highlight),.listingblock pre[class="highlight"],.listingblock pre[class^="highlight "],.listingblock pre.CodeRay,.listingblock pre.prettyprint{background:#f7f7f8}
+.sidebarblock .literalblock pre,.sidebarblock .listingblock pre:not(.highlight),.sidebarblock .listingblock pre[class="highlight"],.sidebarblock .listingblock pre[class^="highlight "],.sidebarblock .listingblock pre.CodeRay,.sidebarblock .listingblock pre.prettyprint{background:#f2f1f1}
+.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{-webkit-border-radius:4px;border-radius:4px;word-wrap:break-word;padding:1em;font-size:.8125em}
+.literalblock pre.nowrap,.literalblock pre[class].nowrap,.listingblock pre.nowrap,.listingblock pre[class].nowrap{overflow-x:auto;white-space:pre;word-wrap:normal}
+@media only screen and (min-width:768px){.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{font-size:.90625em}}
+@media only screen and (min-width:1280px){.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{font-size:1em}}
+.literalblock.output pre{color:#f7f7f8;background-color:rgba(0,0,0,.9)}
+.listingblock pre.highlightjs{padding:0}
+.listingblock pre.highlightjs>code{padding:1em;-webkit-border-radius:4px;border-radius:4px}
+.listingblock pre.prettyprint{border-width:0}
+.listingblock>.content{position:relative}
+.listingblock code[data-lang]:before{display:none;content:attr(data-lang);position:absolute;font-size:.75em;top:.425rem;right:.5rem;line-height:1;text-transform:uppercase;color:#999}
+.listingblock:hover code[data-lang]:before{display:block}
+.listingblock.terminal pre .command:before{content:attr(data-prompt);padding-right:.5em;color:#999}
+.listingblock.terminal pre .command:not([data-prompt]):before{content:"$"}
+table.pyhltable{border-collapse:separate;border:0;margin-bottom:0;background:none}
+table.pyhltable td{vertical-align:top;padding-top:0;padding-bottom:0;line-height:1.45}
+table.pyhltable td.code{padding-left:.75em;padding-right:0}
+pre.pygments .lineno,table.pyhltable td:not(.code){color:#999;padding-left:0;padding-right:.5em;border-right:1px solid #ddddd8}
+pre.pygments .lineno{display:inline-block;margin-right:.25em}
+table.pyhltable .linenodiv{background:none!important;padding-right:0!important}
+.quoteblock{margin:0 1em 1.25em 1.5em;display:table}
+.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock blockquote,.quoteblock blockquote p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
+.quoteblock blockquote{margin:0;padding:0;border:0}
+.quoteblock blockquote:before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
+.quoteblock blockquote>.paragraph:last-child p{margin-bottom:0}
+.quoteblock .attribution{margin-top:.5em;margin-right:.5ex;text-align:right}
+.quoteblock .quoteblock{margin-left:0;margin-right:0;padding:.5em 0;border-left:3px solid rgba(0,0,0,.6)}
+.quoteblock .quoteblock blockquote{padding:0 0 0 .75em}
+.quoteblock .quoteblock blockquote:before{display:none}
+.verseblock{margin:0 1em 1.25em 1em}
+.verseblock pre{font-family:"Open Sans","DejaVu Sans",sans;font-size:1.15rem;color:rgba(0,0,0,.85);font-weight:300;text-rendering:optimizeLegibility}
+.verseblock pre strong{font-weight:400}
+.verseblock .attribution{margin-top:1.25rem;margin-left:.5ex}
+.quoteblock .attribution,.verseblock .attribution{font-size:.9375em;line-height:1.45;font-style:italic}
+.quoteblock .attribution br,.verseblock .attribution br{display:none}
+.quoteblock .attribution cite,.verseblock .attribution cite{display:block;letter-spacing:-.025em;color:rgba(0,0,0,.6)}
+.quoteblock.abstract{margin:0 0 1.25em 0;display:block}
+.quoteblock.abstract blockquote,.quoteblock.abstract blockquote p{text-align:left;word-spacing:0}
+.quoteblock.abstract blockquote:before,.quoteblock.abstract blockquote p:first-of-type:before{display:none}
+table.tableblock{max-width:100%;border-collapse:separate}
+table.tableblock td>.paragraph:last-child p>p:last-child,table.tableblock th>p:last-child,table.tableblock td>p:last-child{margin-bottom:0}
+table.tableblock,th.tableblock,td.tableblock{border:0 solid #dedede}
+table.grid-all th.tableblock,table.grid-all td.tableblock{border-width:0 1px 1px 0}
+table.grid-all tfoot>tr>th.tableblock,table.grid-all tfoot>tr>td.tableblock{border-width:1px 1px 0 0}
+table.grid-cols th.tableblock,table.grid-cols td.tableblock{border-width:0 1px 0 0}
+table.grid-all *>tr>.tableblock:last-child,table.grid-cols *>tr>.tableblock:last-child{border-right-width:0}
+table.grid-rows th.tableblock,table.grid-rows td.tableblock{border-width:0 0 1px 0}
+table.grid-all tbody>tr:last-child>th.tableblock,table.grid-all tbody>tr:last-child>td.tableblock,table.grid-all thead:last-child>tr>th.tableblock,table.grid-rows tbody>tr:last-child>th.tableblock,table.grid-rows tbody>tr:last-child>td.tableblock,table.grid-rows thead:last-child>tr>th.tableblock{border-bottom-width:0}
+table.grid-rows tfoot>tr>th.tableblock,table.grid-rows tfoot>tr>td.tableblock{border-width:1px 0 0 0}
+table.frame-all{border-width:1px}
+table.frame-sides{border-width:0 1px}
+table.frame-topbot{border-width:1px 0}
+th.halign-left,td.halign-left{text-align:left}
+th.halign-right,td.halign-right{text-align:right}
+th.halign-center,td.halign-center{text-align:center}
+th.valign-top,td.valign-top{vertical-align:top}
+th.valign-bottom,td.valign-bottom{vertical-align:bottom}
+th.valign-middle,td.valign-middle{vertical-align:middle}
+table thead th,table tfoot th{font-weight:bold}
+tbody tr th{display:table-cell;line-height:1.6;background:#f7f8f7}
+tbody tr th,tbody tr th p,tfoot tr th,tfoot tr th p{color:rgba(0,0,0,.8);font-weight:bold}
+p.tableblock>code:only-child{background:none;padding:0}
+p.tableblock{font-size:1em}
+td>div.verse{white-space:pre}
+ol{margin-left:1.75em}
+ul li ol{margin-left:1.5em}
+dl dd{margin-left:1.125em}
+dl dd:last-child,dl dd:last-child>:last-child{margin-bottom:0}
+ol>li p,ul>li p,ul dd,ol dd,.olist .olist,.ulist .ulist,.ulist .olist,.olist .ulist{margin-bottom:.625em}
+ul.unstyled,ol.unnumbered,ul.checklist,ul.none{list-style-type:none}
+ul.unstyled,ol.unnumbered,ul.checklist{margin-left:.625em}
+ul.checklist li>p:first-child>.fa-square-o:first-child,ul.checklist li>p:first-child>.fa-check-square-o:first-child{width:1em;font-size:.85em}
+ul.checklist li>p:first-child>input[type="checkbox"]:first-child{width:1em;position:relative;top:1px}
+ul.inline{margin:0 auto .625em auto;margin-left:-1.375em;margin-right:0;padding:0;list-style:none;overflow:hidden}
+ul.inline>li{list-style:none;float:left;margin-left:1.375em;display:block}
+ul.inline>li>*{display:block}
+.unstyled dl dt{font-weight:400;font-style:normal}
+ol.arabic{list-style-type:decimal}
+ol.decimal{list-style-type:decimal-leading-zero}
+ol.loweralpha{list-style-type:lower-alpha}
+ol.upperalpha{list-style-type:upper-alpha}
+ol.lowerroman{list-style-type:lower-roman}
+ol.upperroman{list-style-type:upper-roman}
+ol.lowergreek{list-style-type:lower-greek}
+.hdlist>table,.colist>table{border:0;background:none}
+.hdlist>table>tbody>tr,.colist>table>tbody>tr{background:none}
+td.hdlist1,td.hdlist2{vertical-align:top;padding:0 .625em}
+td.hdlist1{font-weight:bold;padding-bottom:1.25em}
+.literalblock+.colist,.listingblock+.colist{margin-top:-.5em}
+.colist>table tr>td:first-of-type{padding:0 .75em;line-height:1}
+.colist>table tr>td:last-of-type{padding:.25em 0}
+.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}
+.imageblock.left,.imageblock[style*="float: left"]{margin:.25em .625em 1.25em 0}
+.imageblock.right,.imageblock[style*="float: right"]{margin:.25em 0 1.25em .625em}
+.imageblock>.title{margin-bottom:0}
+.imageblock.thumb,.imageblock.th{border-width:6px}
+.imageblock.thumb>.title,.imageblock.th>.title{padding:0 .125em}
+.image.left,.image.right{margin-top:.25em;margin-bottom:.25em;display:inline-block;line-height:0}
+.image.left{margin-right:.625em}
+.image.right{margin-left:.625em}
+a.image{text-decoration:none;display:inline-block}
+a.image object{pointer-events:none}
+sup.footnote,sup.footnoteref{font-size:.875em;position:static;vertical-align:super}
+sup.footnote a,sup.footnoteref a{text-decoration:none}
+sup.footnote a:active,sup.footnoteref a:active{text-decoration:underline}
+#footnotes{padding-top:.75em;padding-bottom:.75em;margin-bottom:.625em}
+#footnotes hr{width:20%;min-width:6.25em;margin:-.25em 0 .75em 0;border-width:1px 0 0 0}
+#footnotes .footnote{padding:0 .375em 0 .225em;line-height:1.3334;font-size:.875em;margin-left:1.2em;text-indent:-1.05em;margin-bottom:.2em}
+#footnotes .footnote a:first-of-type{font-weight:bold;text-decoration:none}
+#footnotes .footnote:last-of-type{margin-bottom:0}
+#content #footnotes{margin-top:-.625em;margin-bottom:0;padding:.75em 0}
+.gist .file-data>table{border:0;background:#fff;width:100%;margin-bottom:0}
+.gist .file-data>table td.line-data{width:99%}
+div.unbreakable{page-break-inside:avoid}
+.big{font-size:larger}
+.small{font-size:smaller}
+.underline{text-decoration:underline}
+.overline{text-decoration:overline}
+.line-through{text-decoration:line-through}
+.aqua{color:#00bfbf}
+.aqua-background{background-color:#00fafa}
+.black{color:#000}
+.black-background{background-color:#000}
+.blue{color:#0000bf}
+.blue-background{background-color:#0000fa}
+.fuchsia{color:#bf00bf}
+.fuchsia-background{background-color:#fa00fa}
+.gray{color:#606060}
+.gray-background{background-color:#7d7d7d}
+.green{color:#006000}
+.green-background{background-color:#007d00}
+.lime{color:#00bf00}
+.lime-background{background-color:#00fa00}
+.maroon{color:#600000}
+.maroon-background{background-color:#7d0000}
+.navy{color:#000060}
+.navy-background{background-color:#00007d}
+.olive{color:#606000}
+.olive-background{background-color:#7d7d00}
+.purple{color:#600060}
+.purple-background{background-color:#7d007d}
+.red{color:#bf0000}
+.red-background{background-color:#fa0000}
+.silver{color:#909090}
+.silver-background{background-color:#bcbcbc}
+.teal{color:#006060}
+.teal-background{background-color:#007d7d}
+.white{color:#bfbfbf}
+.white-background{background-color:#fafafa}
+.yellow{color:#bfbf00}
+.yellow-background{background-color:#fafa00}
+span.icon>.fa{cursor:default}
+.admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,.5);cursor:default}
+.admonitionblock td.icon .icon-note:before{content:"\f05a";color:#19407c}
+.admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,.8);color:#111}
+.admonitionblock td.icon .icon-warning:before{content:"\f071";color:#bf6900}
+.admonitionblock td.icon .icon-caution:before{content:"\f06d";color:#bf3400}
+.admonitionblock td.icon .icon-important:before{content:"\f06a";color:#bf0000}
+.conum[data-value]{display:inline-block;color:#fff!important;background-color:rgba(0,0,0,.8);-webkit-border-radius:100px;border-radius:100px;text-align:center;font-size:.75em;width:1.67em;height:1.67em;line-height:1.67em;font-family:"Open Sans","DejaVu Sans",sans-serif;font-style:normal;font-weight:bold}
+.conum[data-value] *{color:#fff!important}
+.conum[data-value]+b{display:none}
+.conum[data-value]:after{content:attr(data-value)}
+pre .conum[data-value]{position:relative;top:-.125em}
+b.conum *{color:inherit!important}
+.conum:not([data-value]):empty{display:none}
+dt,th.tableblock,td.content,div.footnote{text-rendering:optimizeLegibility}
+h1,h2,p,td.content,span.alt{letter-spacing:-.01em}
+p strong,td.content strong,div.footnote strong{letter-spacing:-.005em}
+p,blockquote,dt,td.content,span.alt{font-size:1.0625rem}
+p{margin-bottom:1.25rem}
+.sidebarblock p,.sidebarblock dt,.sidebarblock td.content,p.tableblock{font-size:1em}
+.exampleblock>.content{background-color:#fffef7;border-color:#e0e0dc;-webkit-box-shadow:0 1px 4px #e0e0dc;box-shadow:0 1px 4px #e0e0dc}
+.print-only{display:none!important}
+@media print{@page{margin:1.25cm .75cm}
+*{-webkit-box-shadow:none!important;box-shadow:none!important;text-shadow:none!important}
+a{color:inherit!important;text-decoration:underline!important}
+a.bare,a[href^="#"],a[href^="mailto:"]{text-decoration:none!important}
+a[href^="http:"]:not(.bare):after,a[href^="https:"]:not(.bare):after{content:"(" attr(href) ")";display:inline-block;font-size:.875em;padding-left:.25em}
+abbr[title]:after{content:" (" attr(title) ")"}
+pre,blockquote,tr,img,object,svg{page-break-inside:avoid}
+thead{display:table-header-group}
+svg{max-width:100%}
+p,blockquote,dt,td.content{font-size:1em;orphans:3;widows:3}
+h2,h3,#toctitle,.sidebarblock>.content>.title{page-break-after:avoid}
+#toc,.sidebarblock,.exampleblock>.content{background:none!important}
+#toc{border-bottom:1px solid #ddddd8!important;padding-bottom:0!important}
+.sect1{padding-bottom:0!important}
+.sect1+.sect1{border:0!important}
+#header>h1:first-child{margin-top:1.25rem}
+body.book #header{text-align:center}
+body.book #header>h1:first-child{border:0!important;margin:2.5em 0 1em 0}
+body.book #header .details{border:0!important;display:block;padding:0!important}
+body.book #header .details span:first-child{margin-left:0!important}
+body.book #header .details br{display:block}
+body.book #header .details br+span:before{content:none!important}
+body.book #toc{border:0!important;text-align:left!important;padding:0!important;margin:0!important}
+body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-break-before:always}
+.listingblock code[data-lang]:before{display:block}
+#footer{background:none!important;padding:0 .9375em}
+#footer-text{color:rgba(0,0,0,.6)!important;font-size:.9em}
+.hide-on-print{display:none!important}
+.print-only{display:block!important}
+.hide-for-print{display:none!important}
+.show-for-print{display:inherit!important}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
+</head>
+<body class="book toc2 toc-left">
+<div id="header">
+<h1>Spring Cloud Data Flow Server for Nomad</h1>
+<div class="details">
+<span id="author" class="author">Donovan Muller</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel0">
+<li><a href="#introduction">Introduction</a>
+<ul class="sectlevel1">
+<li><a href="#_introducing_spring_cloud_data_flow_for_nomad">1. Introducing Spring Cloud Data Flow for Nomad</a></li>
+<li><a href="#spring-cloud-data-flow-overview">2. Spring Cloud Data Flow</a></li>
+<li><a href="#_spring_cloud_stream">3. Spring Cloud Stream</a></li>
+<li><a href="#_spring_cloud_task">4. Spring Cloud Task</a></li>
+</ul>
+</li>
+<li><a href="#features">Features</a>
+<ul class="sectlevel1">
+<li><a href="#_support_for_maven_and_docker_resources">5. Support for Maven and Docker resources</a></li>
+<li><a href="#_docker_volume_support">6. Docker volume support</a></li>
+<li><a href="#_ephemeral_disks">7. Ephemeral disks</a></li>
+<li><a href="#_app_status_derived_from_consul">8. App status derived from Consul</a></li>
+</ul>
+</li>
+<li><a href="#getting-started">Getting Started</a>
+<ul class="sectlevel1">
+<li><a href="#_deploying_streams_on_nomad">9. Deploying Streams on Nomad</a>
+<ul class="sectlevel2">
+<li><a href="#_a_local_nomad_cluster_with_vagrant_hashistack">9.1. A local Nomad cluster with Vagrant Hashistack</a>
+<ul class="sectlevel3">
+<li><a href="#_installation_and_getting_started">9.1.1. Installation and Getting Started</a></li>
+</ul>
+</li>
+<li><a href="#installing-scdf">9.2. Installing the Data Flow Server for Nomad</a></li>
+<li><a href="#_download_and_run_the_spring_cloud_data_flow_shell">9.3. Download and run the Spring Cloud Data Flow Shell</a></li>
+<li><a href="#_registering_stream_applications_with_docker_resource">9.4. Registering Stream applications with Docker resource</a></li>
+<li><a href="#_deploy_a_simple_stream_in_the_shell">9.5. Deploy a simple stream in the shell</a></li>
+<li><a href="#_registering_stream_applications_with_maven_resource">9.6. Registering Stream applications with Maven resource</a></li>
+<li><a href="#_deploy_a_simple_stream_in_the_shell_2">9.7. Deploy a simple stream in the shell</a></li>
+</ul>
+</li>
+<li><a href="#_deploying_tasks_on_nomad">10. Deploying Tasks on Nomad</a>
+<ul class="sectlevel2">
+<li><a href="#_registering_task_application_with_maven_resource">10.1. Registering Task application with Maven resource</a></li>
+<li><a href="#_launch_a_simple_task_in_the_shell">10.2. Launch a simple task in the shell</a>
+<ul class="sectlevel3">
+<li><a href="#_cleanup_completed_tasks">10.2.1. Cleanup completed tasks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#configuration">Configuration</a>
+<ul class="sectlevel1">
+<li><a href="#_maven_configuration">11. Maven Configuration</a></li>
+</ul>
+</li>
+<li><a href="#server">Server Implementation</a>
+<ul class="sectlevel1">
+<li><a href="#_server_properties">12. Server Properties</a></li>
+</ul>
+</li>
+<li><a href="#deployment">Deployment Properties</a>
+<ul class="sectlevel1">
+<li><a href="#_supported_deployment_properties">13. Supported Deployment Properties</a></li>
+</ul>
+</li>
+<li><a href="#howto">&#8216;How-to&#8217; guides</a>
+<ul class="sectlevel1">
+<li><a href="#_deploying_custom_stream_app_as_a_maven_resource">14. Deploying Custom Stream App as a Maven Resource</a>
+<ul class="sectlevel2">
+<li><a href="#_deploy_a_nexus_repository">14.1. Deploy a Nexus Repository</a></li>
+<li><a href="#_configuring_the_data_flow_server_for_nomad">14.2. Configuring the Data Flow Server for Nomad</a></li>
+<li><a href="#_cloning_and_deploying_the_app">14.3. Cloning and Deploying the App</a></li>
+<li><a href="#_deploying_the_stream">14.4. Deploying the Stream</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<h1 id="introduction" class="sect0">Introduction</h1>
+<div class="sect1">
+<h2 id="_introducing_spring_cloud_data_flow_for_nomad">1. Introducing Spring Cloud Data Flow for Nomad</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This project provides support for orchestrating long-running (<em>streaming</em>) and short-lived (<em>task/batch</em>) data microservices to <a href="https://www.nomadproject.io/">Hashicorp Nomad</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="spring-cloud-data-flow-overview">2. Spring Cloud Data Flow</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Data Flow is a cloud-native orchestration service for composable data microservices on modern runtimes. With Spring Cloud Data Flow, developers can create and orchestrate data pipelines for common use cases such as data ingest, real-time analytics, and data import/export.</p>
+</div>
+<div class="paragraph">
+<p>The Spring Cloud Data Flow architecture consists of a server that deploys <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/htmlsingle/#streams">Streams</a> and <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/htmlsingle/#spring-cloud-task-overview">Tasks</a>.  Streams are defined using a <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/html/_dsl_syntax.html">DSL</a> or visually through the browser based designer UI.  Streams are based on the <a href="http://cloud.spring.io/spring-cloud-stream/">Spring Cloud Stream</a> programming model while Tasks are based on the <a href="http://cloud.spring.io/spring-cloud-task/">Spring Cloud Task</a> programming model. The sections below describe more information about creating your own custom Streams and Tasks</p>
+</div>
+<div class="paragraph">
+<p>For more details about the core architecture components and the supported features, please review Spring Cloud Data Flow&#8217;s <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/htmlsingle/">core reference guide</a>. There&#8217;re several <a href="https://github.com/spring-cloud/spring-cloud-dataflow-samples">samples</a> available for reference.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_cloud_stream">3. Spring Cloud Stream</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Stream is a framework for building message-driven microservice applications. Spring Cloud Stream builds upon Spring Boot to create standalone, production-grade Spring applications, and uses Spring Integration to provide connectivity to message brokers. It provides opinionated configuration of middleware from several vendors, introducing the concepts of persistent publish-subscribe semantics, consumer groups, and partitions.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the core framework components and the supported features, please review Spring Cloud Stream&#8217;s <a href="http://docs.spring.io/spring-cloud-stream/docs/{scst-core-version}/reference/htmlsingle/">reference guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s a rich ecosystem of Spring Cloud Stream <a href="http://docs.spring.io/spring-cloud-stream-app-starters/docs/{scst-starters-core-version}/reference/htmlsingle">Application-Starters</a> that can be used either as standalone data microservice applications or in Spring Cloud Data Flow. For convenience, we have generated RabbitMQ and Apache Kafka variants of these application-starters that are available for use from <a href="http://repo.spring.io/libs-snapshot/org/springframework/cloud/stream/app/">Maven Repo</a> and <a href="https://hub.docker.com/r/springcloudstream/">Docker Hub</a> as maven artifacts and docker images, respectively.</p>
+</div>
+<div class="paragraph">
+<p>Do you have a requirement to develop custom applications? No problem. Refer to this guide to create <a href="http://docs.spring.io/spring-cloud-stream-app-starters/docs/{scst-starters-core-version}/reference/htmlsingle/#_creating_custom_artifacts">custom stream applications</a>. There&#8217;re several <a href="https://github.com/spring-cloud/spring-cloud-stream-samples">samples</a> available for reference.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_cloud_task">4. Spring Cloud Task</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Task makes it easy to create short-lived microservices. We provide capabilities that allow short-lived JVM processes to be executed on demand in a production environment.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the core framework components and the supported features, please review Spring Cloud Task&#8217;s <a href="http://docs.spring.io/spring-cloud-task/docs/{sct-core-version}/reference/htmlsingle/">reference guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s a rich ecosystem of Spring Cloud Task <a href="http://docs.spring.io/spring-cloud-task-app-starters/docs/{sct-starters-core-version}/reference/htmlsingle">Application-Starters</a> that can be used either as standalone data microservice applications or in Spring Cloud Data Flow. For convenience, the generated application-starters are available for use from <a href="http://repo.spring.io/libs-snapshot/org/springframework/cloud/task/app/">Maven Repo</a>. There are several <a href="https://github.com/spring-cloud/spring-cloud-task/tree/master/spring-cloud-task-samples">samples</a> available for reference.</p>
+</div>
+</div>
+</div>
+<h1 id="features" class="sect0">Features</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The Data Flow Server for Nomad includes the following highlighted features.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_support_for_maven_and_docker_resources">5. Support for Maven and Docker resources</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Nomad supports both <a href="https://www.nomadproject.io/docs/drivers/java.html">Java</a>
+and <a href="https://www.nomadproject.io/docs/drivers/docker.html">Docker</a>
+drivers that the Data Flow server can utilise to support apps registered as
+Maven and Docker resources.</p>
+</div>
+<div class="paragraph">
+<p>For example, both the below app registrations (via the Data Flow Shell) are valid and supported:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>dataflow:&gt;app register --name http-mvn --type source --uri maven://org.springframework.cloud.stream.app:http-source-rabbit:1.1.0.RELEASE
+dataflow:&gt;app import --name http-docker --type source --uri app register --name http --type source --uri docker:springcloudstream/http-source-rabbit:1.1.0.RELEASE</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the <a href="#getting-started">Getting Started</a> section for examples of deploying both Docker and Maven resource types.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_docker_volume_support">6. Docker volume support</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Docker volume support was added in Nomad <a href="https://github.com/hashicorp/nomad/blob/master/CHANGELOG.md#050-november-16-2016">0.5</a>.
+which allows the Data Flow Server for Nomad to support defining Docker volumes, both as deployer and app deployment
+properties.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Volumes defined at deployer level will be added to <em>all</em> deployed apps. This is handy for
+common shared folders that should be available to all apps.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Below is an example of volumes defined as a server deployer property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">spring.cloud.deployer.nomad:
+  volumes: /opt/data:/data,/opt/config:/config</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where volumes are defined as a comma separated list in the form of <code>host_path:container_path</code>.</p>
+</div>
+<div class="paragraph">
+<p>Examples of the deployment property (via the Data Flow Shell) variation of defining volumes below:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name test --definition "time | file"
+Created new stream 'timezoney'
+
+dataflow:&gt;stream deploy test --properties "app.file.spring.cloud.deployer.nomad.volumes=/opt/data:/data,/opt/config:/config"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the Nomad Docker <a href="https://www.nomadproject.io/docs/drivers/docker.html#volumes">volume documentation</a> for more details.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_ephemeral_disks">7. Ephemeral disks</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The new <a href="https://www.nomadproject.io/docs/job-specification/ephemeral_disk.html">ephemeral_disk</a>
+stanza added in Nomad 0.5 is supported, allowing you to configure an ephemeral disk with app deployment properties.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_app_status_derived_from_consul">8. App status derived from Consul</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The default states for a Nomad <a href="https://www.nomadproject.io/docs/job-specification/index.html">job</a>
+are not really indicative of a healthy application.
+For instance an app may appear to be running based on the Nomad Job/Allocation state
+but is in fact not healthy as determined by invoking the app&#8217;s
+health endpoint (e.g. <code>/health</code>). For a more accurate app status, the Data Flow Server for Nomad can now
+include the Consul (if available) health check status fo the registered app&#8217;s Service.</p>
+</div>
+<div class="paragraph">
+<p>This feature is implemented using <a href="https://cloud.spring.io/spring-cloud-consul/">Spring Cloud Consul</a>.</p>
+</div>
+</div>
+</div>
+<h1 id="getting-started" class="sect0">Getting Started</h1>
+<div class="sect1">
+<h2 id="_deploying_streams_on_nomad">9. Deploying Streams on Nomad</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following guide assumes that you have a <a href="https://www.nomadproject.io/">Nomad 0.5+</a> cluster available.
+If you do not have a Nomad cluster available, see the next section which describes running a local Nomad for development/testing
+otherwise continue to <a href="#installing-scdf">Installing the Data Flow Server for Nomad</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_a_local_nomad_cluster_with_vagrant_hashistack">9.1. A local Nomad cluster with Vagrant Hashistack</h3>
+<div class="paragraph">
+<p>There are a few ways to stand up a local Nomad cluster on your machine for testing.
+For the purpose of this guide, the <a href="https://github.com/donovanmuller/hashistack-vagrant">hashistack-vagrant</a> project will be used.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>hashistack-vagrant</code> VM is configured by default with <code>2048 MB</code> of memory and <code>2</code> CPUs.
+If you run into issues with job allocations failing because of resource starvation, you can tweak the
+memory and CPU configuration in the <code>Vagrantfile</code>.</p>
+</div>
+<div class="paragraph">
+<p>Please see the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/wiki/Resource-Allocations">Resource Allocations</a>
+section in the <code>spring-cloud-dataflow-server-nomad</code> project Wiki for more information.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_installation_and_getting_started">9.1.1. Installation and Getting Started</h4>
+<div class="paragraph">
+<p>Follow the <a href="https://github.com/donovanmuller/hashistack-vagrant#quickstart">Quickstart</a>
+section of the <a href="https://github.com/donovanmuller/hashistack-vagrant">hashistack-vagrant</a>.</p>
+</div>
+<div class="paragraph">
+<p>Once you have successfully started the Vagrant VM and (with <code>tmuxp load full-hashistack.yml</code>) "hashistack",
+make sure you can use the <code>nomad</code> client to query the local instance:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad status
+No running jobs</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>You could also install the <code>nomad</code> binary locally and connect to the Nomad client running inside the VM. For example
+on Mac you could install Nomad with homebrew and add the <code>--address</code> option to your commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ brew install nomad
+...
+$ nomad status --address=http://172.16.0.2:4646
+ID    Type     Priority  Status
+scdf  service  50        running</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="installing-scdf">9.2. Installing the Data Flow Server for Nomad</h3>
+<div class="paragraph">
+<p>To install a Data Flow Server and supporting infrastructure components to Nomad we will use the provided Job specification provided
+in the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/tree/v1.1.0.RELEASE/src/etc/nomad"><code>src/etc/nomad/</code></a>
+directory of the project&#8217;s GitHub repository.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This Job requires the <a href="https://www.nomadproject.io/docs/drivers/docker.html">Docker</a> driver.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This job specification includes the following tasks:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Spring Cloud Data Flow Server for Nomad</p>
+</li>
+<li>
+<p>MySQL - as the datasource for the Data Flow Server</p>
+</li>
+<li>
+<p>Redis - for analytics support</p>
+</li>
+<li>
+<p>Kafka - as the Spring Cloud Stream default binder implementation</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you are not using the hashistack-vagrant VM, please adjust the <code>region</code> and <code>datacenters</code>
+values in the <code>scdf.nomad</code> job specification file accordingly.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Next, using the SSH session to the VM, run the job with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad run https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/nexus.nomad
+==> Monitoring evaluation "67f078e6"
+    Evaluation triggered by job "scdf"
+    Allocation "966c4cbd" created: node "c99cf24d", group "scdfr"
+    Allocation "966c4cbd" status changed: "pending" -> "running"
+    Evaluation status changed: "pending" -> "complete"
+==> Evaluation "67f078e6" finished with status "complete"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Allow some time for the Docker images to be pulled and all containers to be started.
+You can verify that all tasks have been successfully started by checking the
+corresponding allocation status:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad alloc-status 966c4cbd
+ID                 = 3d235c82
+Eval ID            = 04164728
+Name               = scdf.scdf[0]
+Node ID            = 2dd82384
+Job ID             = scdf
+Client Status      = running
+Client Description = &lt;none&gt;
+Created At         = 12/13/16s 09:15:20 UTC
+
+Task "kafka" is "running"
+Task Resources
+CPU         Memory           Disk  IOPS  Addresses
+13/500 MHz  506 MiB/512 MiB  0 B   0     kafka: 10.0.2.15:9092
+
+Recent Events:
+Time                   Type        Description
+12/13/16 09:15:47 UTC  Started     Task started by client
+12/13/16 09:15:36 UTC  Restarting  Task restarting in 10.338625681s
+12/13/16 09:15:36 UTC  Terminated  Exit Code: 1, Exit Message: "Docker container exited with non-zero exit code: 1"
+12/13/16 09:15:35 UTC  Started     Task started by client
+12/13/16 09:15:24 UTC  Restarting  Task restarting in 10.118221449s
+12/13/16 09:15:24 UTC  Terminated  Exit Code: 1, Exit Message: "Docker container exited with non-zero exit code: 1"
+12/13/16 09:15:22 UTC  Started     Task started by client
+12/13/16 09:15:20 UTC  Received    Task received by client
+
+Task "mysql" is "running"
+Task Resources
+CPU        Memory           Disk  IOPS  Addresses
+2/500 MHz  115 MiB/128 MiB  0 B   0     db: 10.0.2.15:3306
+
+Recent Events:
+Time                   Type      Description
+12/13/16 09:15:22 UTC  Started   Task started by client
+12/13/16 09:15:20 UTC  Received  Task received by client
+
+Task "redis" is "running"
+Task Resources
+CPU        Memory          Disk  IOPS  Addresses
+2/256 MHz  6.2 MiB/64 MiB  0 B   0     redis: 10.0.2.15:6379
+
+Recent Events:
+Time                   Type      Description
+12/13/16 09:15:22 UTC  Started   Task started by client
+12/13/16 09:15:20 UTC  Received  Task received by client
+
+Task "scdf-server" is "running"
+Task Resources
+CPU        Memory           Disk  IOPS  Addresses
+3/500 MHz  304 MiB/384 MiB  0 B   0     http: 10.0.2.15:9393
+
+Recent Events:
+Time                   Type        Description
+12/13/16 09:15:42 UTC  Started     Task started by client
+...
+
+Task "zookeeper" is "running"
+Task Resources
+CPU        Memory          Disk  IOPS  Addresses
+3/500 MHz  84 MiB/128 MiB  0 B   0     zookeeper: 10.0.2.15:2181
+                                       follower: 10.0.2.15:2888
+                                       leader: 10.0.2.15:3888
+
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or alternatively check the health status of all services using the Consul UI:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/raw/master/spring-cloud-dataflow-server-nomad-docs/src/main/asciidoc/images/scdf-nomad-up.png" alt="Data Flow Server and components up">
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you are using a local <code>nomad</code> binary you can reference the remote <code>scdf.nomad</code> file directly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ nomad run --address=http://172.16.0.2:4646 https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/scdf.nomad
+...</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_download_and_run_the_spring_cloud_data_flow_shell">9.3. Download and run the Spring Cloud Data Flow Shell</h3>
+<div class="paragraph">
+<p>Download and run the Shell, targeting the Data Flow Server exposed via a Fabio route.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ wget http://repo.spring.io/release/org/springframework/cloud/spring-cloud-dataflow-shell/1.1.0.RELEASE/spring-cloud-dataflow-shell-1.1.0.RELEASE.jar
+$ java -jar spring-cloud-dataflow-shell-1.1.0.RELEASE.jar --dataflow.uri=http://scdf-server.hashistack.vagrant/
+
+  ____                              ____ _                __
+ / ___| _ __  _ __(_)_ __   __ _   / ___| | ___  _   _  __| |
+ \___ \| '_ \| '__| | '_ \ / _` | | |   | |/ _ \| | | |/ _` |
+  ___) | |_) | |  | | | | | (_| | | |___| | (_) | |_| | (_| |
+ |____/| .__/|_|  |_|_| |_|\__, |  \____|_|\___/ \__,_|\__,_|
+  ____ |_|    _          __|___/                 __________
+ |  _ \  __ _| |_ __ _  |  ___| | _____      __  \ \ \ \ \ \
+ | | | |/ _` | __/ _` | | |_  | |/ _ \ \ /\ / /   \ \ \ \ \ \
+ | |_| | (_| | || (_| | |  _| | | (_) \ V  V /    / / / / / /
+ |____/ \__,_|\__\__,_| |_|   |_|\___/ \_/\_/    /_/_/_/_/_/
+
+1.1.0.RELEASE
+
+Welcome to the Spring Cloud Data Flow shell. For assistance hit TAB or type "help".
+dataflow:></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registering_stream_applications_with_docker_resource">9.4. Registering Stream applications with Docker resource</h3>
+<div class="paragraph">
+<p>Now register all out-of-the-box stream applications using the Docker resource type, built with the Kafka binder in bulk with the following command.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+For more details, review how to <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/html/spring-cloud-dataflow-register-apps.html">register applications</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app import --uri http://bit.ly/stream-applications-kafka-docker
+Successfully registered applications: [source.tcp, sink.jdbc, source.http, sink.rabbit, source.rabbit, source.ftp, sink.gpfdist, processor.transform, source.loggregator, source.sftp, processor.filter, sink.cassandra, processor.groovy-filter, sink.router, source.trigger, sink.hdfs-dataset, processor.splitter, source.load-generator, processor.tcp-client, source.time, source.gemfire, source.twitterstream, sink.tcp, source.jdbc, sink.field-value-counter, sink.redis-pubsub, sink.hdfs, processor.bridge, processor.pmml, processor.httpclient, source.s3, sink.ftp, sink.log, sink.gemfire, sink.aggregate-counter, sink.throughput, source.triggertask, sink.s3, source.gemfire-cq, source.jms, source.tcp-client, processor.scriptable-transform, sink.counter, sink.websocket, source.mongodb, source.mail, processor.groovy-transform, source.syslog]</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploy_a_simple_stream_in_the_shell">9.5. Deploy a simple stream in the shell</h3>
+<div class="paragraph">
+<p>Create a simple <code>ticktock</code> stream definition and deploy it immediately using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name ticktock --definition "time | log" --deploy
+Created new stream 'ticktock'
+Deployment request has been sent</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify the deployed apps using the by checking the status of the apps using the Shell:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/raw/master/spring-cloud-dataflow-server-nomad-docs/src/main/asciidoc/images/scdf-nomad-stream-deployed.png" alt="ticktock streamd deployed">
+</div>
+</div>
+<div class="paragraph">
+<p>To verify that the stream is working as expected, tail the logs of the <code>ticktock-log</code> using <code>nomad</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad logs 71f7aba1
+...
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:49:59
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:01
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:02
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:03
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:04
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:05
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:06
+...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registering_stream_applications_with_maven_resource">9.6. Registering Stream applications with Maven resource</h3>
+<div class="paragraph">
+<p>The Data Flow Server for Nomad also supports apps registered with a Maven resource URI
+in addition to the Docker resource type. Using the <code>ticktock</code> stream example above, we will create a similar stream definition
+but using the Maven resource versions of the apps.</p>
+</div>
+<div class="paragraph">
+<p>For this example we will register the apps individually using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:>app register --type source --name time-mvn --uri maven://org.springframework.cloud.stream.app:time-source-kafka:1.1.0.RELEASE
+Successfully registered application 'source:time-mvn'
+dataflow:>app register --type sink --name log-mvn --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.1.0.RELEASE
+Successfully registered application 'sink:log-mvn'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We couldn&#8217;t bulk import the Maven version of the apps as we did for the Docker versions because the app names
+would conflict, as the names defined in the bulk import files are the same across resource types. Hence we register the
+Maven apps with a <code>-mvn</code> suffix.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploy_a_simple_stream_in_the_shell_2">9.7. Deploy a simple stream in the shell</h3>
+<div class="paragraph">
+<p>Create a simple <code>ticktock-mvn</code> stream definition and deploy it immediately using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name ticktock-mvn --definition "time-mvn | log-mvn" --deploy
+Created new stream 'ticktock-mvn'
+Deployment request has been sent</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There could be a slight delay once the above command is issued. This is due to the Maven artifacts being
+resolved and cached locally. Depending on the size of the artifacts, this could take some time.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To verify that the stream is working as expected, tail the logs of the <code>ticktock-mvn-log-mvn</code> using <code>nomad</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ nomad logs -f 3f474cc7
+...
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:23
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:25
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:26
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:27</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_deploying_tasks_on_nomad">10. Deploying Tasks on Nomad</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Deploying Task applications using the Data Flow Server for Nomad is a similar affair to deploying Stream apps.
+Therefore, for brevity, only the Maven resource version of the task will be shown as an example.</p>
+</div>
+<div class="sect2">
+<h3 id="_registering_task_application_with_maven_resource">10.1. Registering Task application with Maven resource</h3>
+<div class="paragraph">
+<p>This time we will bulk import the Task application, as we do not have any Docker resource versions imported which would cause conflicts in naming.
+Import all Maven task applications with the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app import --uri http://bit.ly/1-0-1-GA-task-applications-maven</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_launch_a_simple_task_in_the_shell">10.2. Launch a simple task in the shell</h3>
+<div class="paragraph">
+<p>Let’s create a simple task definition and launch it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;task create task1 --definition "timestamp"
+dataflow:&gt;task launch task1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify that the task executed successfully by executing these commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;task list
+╔═════════╤═══════════════╤═══════════╗
+║Task Name│Task Definition│Task Status║
+╠═════════╪═══════════════╪═══════════╣
+║task1    │timestamp      │complete   ║
+╚═════════╧═══════════════╧═══════════╝
+
+dataflow:&gt;task execution list
+╔═════════╤══╤═════════════════════════════╤═════════════════════════════╤═════════╗
+║Task Name│ID│         Start Time          │          End Time           │Exit Code║
+╠═════════╪══╪═════════════════════════════╪═════════════════════════════╪═════════╣
+║task1    │1 │Tue Dec 13 15:34:01 SAST 2016│Tue Dec 13 15:34:01 SAST 2016│0        ║
+╚═════════╧══╧═════════════════════════════╧═════════════════════════════╧═════════╝</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also view the task execution status by using the Data Flow Server UI.</p>
+</div>
+<div class="sect3">
+<h4 id="_cleanup_completed_tasks">10.2.1. Cleanup completed tasks</h4>
+<div class="paragraph">
+<p>If you want to delete the Build and Pod created by this task execution, execute the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;task destroy --name task1</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<h1 id="configuration" class="sect0">Configuration</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The Data Flow Server for Nomad supports all the common configuration options.
+See <a href="https://github.com/donovanmuller/spring-cloud-deployer-nomad/blob/v1.1.0.RELEASE/src/main/java/org/springframework/cloud/deployer/spi/nomad/NomadDeployerProperties.java">NomadDeployerProperties</a>
+for the supported deployer configuration items.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_maven_configuration">11. Maven Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Maven configuration is important for resolving Maven app artifacts.
+The following example configures a <code>spring</code> remote Maven repository:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>maven:
+  remote-repositories.spring:
+    url: http://repo.spring.io/libs-snapshot
+    auth:
+      username:
+      password:</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+More configuration options can be seen in the <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/html/_configure_maven_properties.html#_configure_maven_properties">Configure Maven Properties</a>
+section in the Data Flow reference documentation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<h1 id="server" class="sect0">Server Implementation</h1>
+<div class="sect1">
+<h2 id="_server_properties">12. Server Properties</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following properties can be used to configure the Data Flow Nomad Server.</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Usage Example</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API Hostname/IP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.nomadHost=nomad-client.cluster.com</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hostname/IP address where a Nomad client is listening. Default is <code>localhost</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API Port</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.nomadPort=14646</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The port where a Nomad client is listening. Default is <code>4646</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Region</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.region=eu-west</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The region to deploy apps into. Default to <code>global</code>. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Region">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Datacenters</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.datacenters=dc1,dc2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of datacenters that should be targeted for deployment. Default value is <code>dc1</code>. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Datacenters">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Priority</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.priority=25</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The default job priority. Default value is 50. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Priority">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment Variables</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.environmentVariables=ENV_VAR_1=test</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Common environment variables to set for any deployed app.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expose app via Fabio</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.exposeViaFabio=true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag to indicate whether an app should be exposed via <a href="https://github.com/eBay/fabio">Fabio</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP Health Check - Path</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.checkHttpPath=/management/health</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#Path">path</a> of the HTTP endpoint which Consul (if available) will query to query the health</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP Health Check - Interval</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.checkInterval=60000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This indicates the frequency of the health checks that Consul will perform. Specified in milliseconds. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Interval">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP Health Check - Timeout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.checkTimeout=14646</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This indicates how long Consul will wait for a health check query to succeed. Specified in milliseconds. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Timeout">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Resource - CPU</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.resources.cpu=500</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#">CPU</a> required in MHz. Default is 1000MHz</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Resource - Memory</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.resources.memory=1024</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#MemoryMB">memory</a> required in MB. Default is 512MB</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Resource - Network</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.resources.networkMBits=100</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The number of <a href="https://www.nomadproject.io/docs/jobspec/json.html#MBits">MBits</a> in bandwidth required</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral Disk - Sticky</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.resources.ephemeralDisk.sticky=false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies that Nomad should make a best-effort attempt to place the updated allocation on the same machine. See <a href="https://www.nomadproject.io/docs/job-specification/ephemeral_disk.html#sticky">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral Disk - Migrate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.ephemeralDisk.migrate=false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies that the Nomad client should make a best-effort</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral Disk - Size</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.ephemeralDisk.size=500</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies the size of the ephemeral disk in MB</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Logging - Max Files</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.loggingMaxFiles=2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#MaxFiles">maximum number of rotated files</a> Nomad will retain. The default is 1 log file retention size</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Logging - Max File Size</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.loggingMaxFileSize=20</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#MaxFileSizeMB">size</a> of each rotated file. The size is specified in MB. The default is 10MB max log file size</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restart Policy - Delay</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.restartPolicyDelay=10000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A duration to wait before restarting a task. Specified in milliseconds. Default is 30000 milliseconds (30 seconds). See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Delay">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restart Policy - Interval</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.restartPolicyInterval=5000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Interval begins when the first task starts and ensures that only X number of attempts number of. Specified in milliseconds. Default is 120000 milliseconds (120 seconds / 3 minutes). See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Interval">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restart Policy - Attempts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.restartPolicyAttempts=1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attempts is the number of restarts allowed in an Interval. Default is 3 attempts within 3 minutes. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Attempts">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Restart Policy - Mode</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.restartPolicyMode=1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mode is given as a string and controls the behavior when the task fails more than X number of attempts times in an Interval. Default value is <a href="https://www.nomadproject.io/docs/jobspec/json.html#delay">"delay"</a>. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Mode">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker - Entrypoint Style</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.entryPointStyle=shell</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entry point style used for the Docker image. To be used to determine how to pass in properties</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker - Volumes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.volumes=/var/test:/test</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of <code>host_path:container_path</code> values. See <a href="https://www.nomadproject.io/docs/drivers/docker.html#volumes">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Artifact Destination</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.artifactDestination=local/app</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The destination (path) where artifacts will be downloaded by default. Default value is <code>local</code>. See <a href="https://www.nomadproject.io/docs/job-specification/artifact.html#destination">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Java Options</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.javaOpts=-Xms64m,-Xmx128m</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of default Java options to pass to the JVM. Only applicable to the Maven resource deployer implementation. See <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/index.html#getting-started-application-configuration">for reference</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Deployer Scheme</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.deployerScheme=https</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The URI scheme that the deployer server is running on. When deploying Maven resource based apps the artifact source URL includes the servers host and port. This property value is used when constructing the source URL. See <a href="https://www.nomadproject.io/docs/job-specification/artifact.html#source">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Deployer Host</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.deployerHost=scdf-nomad.cluster.com</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The resolvable hostname of IP address that the deployer server is running on. When deploying Maven resource based apps the artifact source URL includes the servers host and port. This property value is used when constructing the source URL. See <a href="https://www.nomadproject.io/docs/job-specification/artifact.html#source">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Deployer Port</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.deployerPort=443</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The port that the deployer server is listening on. When deploying Maven resource based apps the artifact source URL includes the servers host and port. This property value is used when constructing the source URL. See <a href="https://www.nomadproject.io/docs/job-specification/artifact.html#source">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Minimum Java Version</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.minimumJavaVersion=1.7</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If set, the allocated node must support at least this version of a Java runtime environment. E.g. '1.8' for a minimum of a Java 8 JRE/JDK. See <a href="https://www.nomadproject.io/docs/drivers/java.html#driver_java_version">here</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h1 id="deployment" class="sect0">Deployment Properties</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The following deployment properties are supported by the Data Flow Server for Nomad.
+These properties are passed as deployment properties when deploying streams or tasks.
+Below is an example of deploying a stream definition:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name test --definition "time | custom | log"
+Created new stream 'test'
+
+dataflow:&gt;stream deploy test --properties "app.custom.spring.cloud.deployer.nomad.job.priority=75"
+Deployment request has been sent for stream 'test'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note the deployment property <code>app.custom.spring.cloud.deployer.nomad.job.priority=75</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_deployment_properties">13. Supported Deployment Properties</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Usage Example</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Job Priority</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.job.priority=75</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Job priority. See <a href="https://www.nomadproject.io/docs/jobspec/json.html#Priority">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fabio - Expose flag</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.fabio.expose=true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A flag to indicate whether the tags/labels that enable Fabio to configure routing are added or not. Specify a value of <code>true</code> to enable adding the URL prefix tags. See <a href="https://github.com/eBay/fabio/wiki/Quickstart">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fabio - Hostname</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.fabio.route.hostname=testapp</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The hostname that will be exposed via Fabio. If no hostname is provided, the deploymentId will be used. See <a href="https://github.com/eBay/fabio/wiki/Quickstart">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Resources - CPU</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.cpu=500</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#CPU">CPU</a> required in MHz</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Resources - Memory</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.memory=1024</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <a href="https://www.nomadproject.io/docs/jobspec/json.html#MemoryMB">memory</a> required in MB</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment Variables</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.environmentVariables=ENV_VAR_1=ENV_VAL_1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment variables passed at deployment time. This is to cater for adding variables like JAVA_OPTS to supported deployer types</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker - Entrypoint Style</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.entryPointStyle=shell</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Entry point style used for the Docker image. To be used to determine how to pass in properties</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker - Volumes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.volumes=/var/test:/test</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of <code>host_path:container_path</code> values. See <a href="https://www.nomadproject.io/docs/drivers/docker.html#volumes">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Meta</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.meta=streamVersion=1.0.0,streamDescription=A test stream</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An optional comma separated list of <a href="https://www.nomadproject.io/docs/job-specification/meta.html">meta</a> stanzas to add at the Job level</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral Disk - Sticky</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.resources.ephemeralDisk.sticky=false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies that Nomad should make a best-effort attempt to place the updated allocation on the same machine. See <a href="https://www.nomadproject.io/docs/job-specification/ephemeral_disk.html#sticky">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral Disk - Migrate</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.ephemeralDisk.migrate=false</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies that the Nomad client should make a best-effort</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral Disk - Size</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.ephemeralDisk.size=500</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies the size of the ephemeral disk in MB</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maven - Java Options</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.nomad.javaOpts=-Xms64m,-Xmx128m</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of default Java options to pass to the JVM. Only applicable to the Maven resource deployer implementation. See <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/index.html#getting-started-application-configuration">for reference</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h1 id="howto" class="sect0">&#8216;How-to&#8217; guides</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>This section provides answers to some common &#8216;how do I do that&#8230;&#8203;&#8217; type of questions
+that often arise when using Spring Cloud Data Flow.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_deploying_custom_stream_app_as_a_maven_resource">14. Deploying Custom Stream App as a Maven Resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section walks you through deploying a simple Spring Cloud Stream based application, packaged as a Maven artifact, with Nomad.
+The source code for this app is available in the following <a href="https://github.com/donovanmuller/timezone-processor-kafka">GitHub repository</a>.</p>
+</div>
+<div class="paragraph">
+<p>This guide assumes that you have gone through the <a href="#getting-started">Getting Started</a> section and are using a local <a href="https://github.com/donovanmuller/hashistack-vagrant">hashistack-vagrant</a> environment.
+Adjust the steps accordingly if you are using an existing Nomad cluster.</p>
+</div>
+<div class="sect2">
+<h3 id="_deploy_a_nexus_repository">14.1. Deploy a Nexus Repository</h3>
+<div class="paragraph">
+<p>For Nomad to deploy the Maven artifact, it must be able to resolve and download the custom app&#8217;s Jar artifact.
+This means that the custom app must be deployed to an accessible Maven repository.</p>
+</div>
+<div class="paragraph">
+<p>We will deploy a Nexus job specification to which we can deploy our custom application.
+Deploying the Nexus image is trivial thanks to
+a provided Nexus job specification <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/tree/v1.1.0.RELEASE/src/etc/nomad/nexus.nomad">available here</a>.</p>
+</div>
+<div class="paragraph">
+<p>Using <code>nomad</code>, run the Nexus job with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad run https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/nexus.nomad
+...</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you are using a local <code>nomad</code> binary you can reference the remote <code>scdf.nomad</code> file directly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ nomad run --address=http://172.16.0.2:4646 https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/nexus.nomad
+...</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Wait for the Nexus image to be pulled and the deployment to be successful. Once the task is successfully running
+you should be able to access the Nexus UI at <a href="http://nexus.hashistack.vagrant" class="bare">nexus.hashistack.vagrant</a>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The default credential for Nexus is <code>admin</code>/<code>admin123</code> or <code>deployment</code>/<code>deployment123</code>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_the_data_flow_server_for_nomad">14.2. Configuring the Data Flow Server for Nomad</h3>
+<div class="paragraph">
+<p>We need to configure the Data Flow Server to use this new Nexus instance as a remote Maven repository.
+If you have an existing deployment from the <a href="#getting-started">Getting Started</a> section you will have to change it&#8217;s configuration.</p>
+</div>
+<div class="paragraph">
+<p>You could edit the <code>scdf.nomad</code> job specification and rerun the job but possibly the easiest way to
+include the Nexus configuration is to remove the existing <code>scdf</code> job and run the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/tree/v1.1.0.RELEASE/src/etc/nomad/scdf-with-nexus.nomad">scdf-with-nexus.nomad</a>
+job specification.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad stop scdf
+...
+vagrant@hashistack:~$ nomad run https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-nomad/v1.1.0.RELEASE/src/etc/nomad/scdf-with-nexus.nomad
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for the job and all tasks to be in a running state.
+You can verify that everything including Nexus has been started by checking Consul:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/raw/master/spring-cloud-dataflow-server-nomad-docs/src/main/asciidoc/images/scdf-nomad-with-nexus.png" alt="nexus">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cloning_and_deploying_the_app">14.3. Cloning and Deploying the App</h3>
+<div class="paragraph">
+<p>Next step is to deploy our custom app into the Nexus instance.
+First though, we need to clone the custom app source.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ git clone https://github.com/donovanmuller/timezone-processor-kafka.git
+$ cd timezone-processor-kafka</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Next we deploy the application into our Nexus repository with</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ ./mvnw -s .settings.xml deploy -Dnexus.url=http://nexus.hashistack.vagrant/content/repositories/snapshots
+...
+Uploading: http://nexus.hashistack.vagrant/content/repositories/snapshots/io/switchbit/timezone-processor-kafka/maven-metadata.xml
+Uploaded: http://nexus.hashistack.vagrant/content/repositories/snapshots/io/switchbit/timezone-processor-kafka/maven-metadata.xml (294 B at 9.3 KB/sec)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 11.171 s
+[INFO] Finished at: 2016-12-13T15:39:43+02:00
+[INFO] Final Memory: 25M/326M
+[INFO] ------------------------------------------------------------------------</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Substitute the value for <code>-Dnexus.url</code> with the URL matching your Nexus instance.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploying_the_stream">14.4. Deploying the Stream</h3>
+<div class="paragraph">
+<p>Now that our custom app is ready, let&#8217;s register it with the Data Flow Server.
+Using the Data Flow Shell, targeted to our Nomad instance, register the <code>timezone</code> app with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app register --name timezone --type processor --uri maven://io.switchbit:timezone-processor-kafka:1.0-SNAPSHOT
+Successfully registered application 'processor:timezone'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The assumption is that the out-of-the-box apps have been imported previously as part of the <a href="#getting-started">Getting Started</a> section.
+If the apps are not imported, import them now with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app import --uri http://bit.ly/stream-applications-kafka-docker</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It does not really matter whether the Docker or Maven out-of-the-box apps are registered.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now we can define a stream using our timezone processor with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name timezoney --definition "time | timezone | log"
+Created new stream 'timezoney'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and deploy it with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream deploy timezoney --properties "app.timezone.timezone=Africa/Johannesburg"
+Deployment request has been sent for stream 'timezoney'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The provided deployment property (<code>app.timezone.timezone=Africa/Johannesburg</code>) is the required timezone to convert the input times too.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Check the jobs created with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad status
+ID                  Type     Priority  Status
+nexus               service  50        running
+scdf-nexus          service  50        running
+timezoney-log       service  50        running
+timezoney-time      service  50        running
+timezoney-timezone  service  50        running</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or check the Consul health checks for the <code>timezoney-*</code> stream apps:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-nomad/raw/master/spring-cloud-dataflow-server-nomad-docs/src/main/asciidoc/images/scdf-nomad-timezoney-deployed.png" alt="timezoney stream deployed">
+</div>
+</div>
+<div class="paragraph">
+<p>View both the <code>timezoney-timezone-0</code> and <code>timezoney-log-0</code> apps for the expected log outputs.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">vagrant@hashistack:~$ nomad logs -f 35c70aec
+...
+...  INFO 17275 --- [afka-consumer-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions revoked:[timezoney.time-0]
+...  INFO 17275 --- [afka-consumer-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions assigned:[timezoney.time-0]
+...  INFO 17275 --- [afka-listener-2] io.switchbit.TimezoneProcessor           : Converting time '12/13/16 20:01:29' to timezone: 'Africa/Johannesburg'
+...  INFO 17275 --- [afka-listener-2] io.switchbit.TimezoneProcessor           : Converting time '12/13/16 20:01:30' to timezone: 'Africa/Johannesburg'
+...  INFO 17275 --- [afka-listener-2] io.switchbit.TimezoneProcessor           : Converting time '12/13/16 20:01:31' to timezone: 'Africa/Johannesburg'
+...  INFO 17275 --- [afka-listener-2] io.switchbit.TimezoneProcessor           : Converting time '12/13/16 20:01:32' to timezone: 'Africa/Johannesburg'
+...  INFO 17275 --- [afka-listener-2] io.switchbit.TimezoneProcessor           : Converting time '12/13/16 20:01:33' to timezone: 'Africa/Johannesburg'
+
+vagrant@hashistack:~$ nomad logs -f 047ef240
+...
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 12/13/16 22:03:17
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 12/13/16 22:03:18
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 12/13/16 22:03:19
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 12/13/16 22:03:20
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 12/13/16 22:03:21</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once you&#8217;re done, destroy the stream with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream destroy timezoney
+Destroyed stream 'timezoney'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2016-12-13 23:51:50 SAST
+</div>
+</div>
+</body>
+</html>
