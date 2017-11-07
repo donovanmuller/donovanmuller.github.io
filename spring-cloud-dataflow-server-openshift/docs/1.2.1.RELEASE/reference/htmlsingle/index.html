@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.3">
+<meta name="author" content="Donovan Muller">
+<title>Spring Cloud Data Flow Server for OpenShift</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
+<style>
+/* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
+/* Remove comment around @import statement below when using as a custom stylesheet */
+/*@import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700";*/
+article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}
+audio,canvas,video{display:inline-block}
+audio:not([controls]){display:none;height:0}
+[hidden],template{display:none}
+script{display:none!important}
+html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{margin:0}
+a{background:transparent}
+a:focus{outline:thin dotted}
+a:active,a:hover{outline:0}
+h1{font-size:2em;margin:.67em 0}
+abbr[title]{border-bottom:1px dotted}
+b,strong{font-weight:bold}
+dfn{font-style:italic}
+hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}
+mark{background:#ff0;color:#000}
+code,kbd,pre,samp{font-family:monospace;font-size:1em}
+pre{white-space:pre-wrap}
+q{quotes:"\201C" "\201D" "\2018" "\2019"}
+small{font-size:80%}
+sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}
+sup{top:-.5em}
+sub{bottom:-.25em}
+img{border:0}
+svg:not(:root){overflow:hidden}
+figure{margin:0}
+fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}
+legend{border:0;padding:0}
+button,input,select,textarea{font-family:inherit;font-size:100%;margin:0}
+button,input{line-height:normal}
+button,select{text-transform:none}
+button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}
+button[disabled],html input[disabled]{cursor:default}
+input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}
+input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}
+input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}
+button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}
+textarea{overflow:auto;vertical-align:top}
+table{border-collapse:collapse;border-spacing:0}
+*,*:before,*:after{-moz-box-sizing:border-box;-webkit-box-sizing:border-box;box-sizing:border-box}
+html,body{font-size:100%}
+body{background:#fff;color:rgba(0,0,0,.8);padding:0;margin:0;font-family:"Noto Serif","DejaVu Serif",serif;font-weight:400;font-style:normal;line-height:1;position:relative;cursor:auto}
+a:hover{cursor:pointer}
+img,object,embed{max-width:100%;height:auto}
+object,embed{height:100%}
+img{-ms-interpolation-mode:bicubic}
+.left{float:left!important}
+.right{float:right!important}
+.text-left{text-align:left!important}
+.text-right{text-align:right!important}
+.text-center{text-align:center!important}
+.text-justify{text-align:justify!important}
+.hide{display:none}
+body{-webkit-font-smoothing:antialiased}
+img,object,svg{display:inline-block;vertical-align:middle}
+textarea{height:auto;min-height:50px}
+select{width:100%}
+.center{margin-left:auto;margin-right:auto}
+.spread{width:100%}
+p.lead,.paragraph.lead>p,#preamble>.sectionbody>.paragraph:first-of-type p{font-size:1.21875em;line-height:1.6}
+.subheader,.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{line-height:1.45;color:#7a2518;font-weight:400;margin-top:0;margin-bottom:.25em}
+div,dl,dt,dd,ul,ol,li,h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6,pre,form,p,blockquote,th,td{margin:0;padding:0;direction:ltr}
+a{color:#2156a5;text-decoration:underline;line-height:inherit}
+a:hover,a:focus{color:#1d4b8f}
+a img{border:none}
+p{font-family:inherit;font-weight:400;font-size:1em;line-height:1.6;margin-bottom:1.25em;text-rendering:optimizeLegibility}
+p aside{font-size:.875em;line-height:1.35;font-style:italic}
+h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{font-family:"Open Sans","DejaVu Sans",sans-serif;font-weight:300;font-style:normal;color:#ba3925;text-rendering:optimizeLegibility;margin-top:1em;margin-bottom:.5em;line-height:1.0125em}
+h1 small,h2 small,h3 small,#toctitle small,.sidebarblock>.content>.title small,h4 small,h5 small,h6 small{font-size:60%;color:#e99b8f;line-height:0}
+h1{font-size:2.125em}
+h2{font-size:1.6875em}
+h3,#toctitle,.sidebarblock>.content>.title{font-size:1.375em}
+h4,h5{font-size:1.125em}
+h6{font-size:1em}
+hr{border:solid #ddddd8;border-width:1px 0 0;clear:both;margin:1.25em 0 1.1875em;height:0}
+em,i{font-style:italic;line-height:inherit}
+strong,b{font-weight:bold;line-height:inherit}
+small{font-size:60%;line-height:inherit}
+code{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;color:rgba(0,0,0,.9)}
+ul,ol,dl{font-size:1em;line-height:1.6;margin-bottom:1.25em;list-style-position:outside;font-family:inherit}
+ul,ol,ul.no-bullet,ol.no-bullet{margin-left:1.5em}
+ul li ul,ul li ol{margin-left:1.25em;margin-bottom:0;font-size:1em}
+ul.square li ul,ul.circle li ul,ul.disc li ul{list-style:inherit}
+ul.square{list-style-type:square}
+ul.circle{list-style-type:circle}
+ul.disc{list-style-type:disc}
+ul.no-bullet{list-style:none}
+ol li ul,ol li ol{margin-left:1.25em;margin-bottom:0}
+dl dt{margin-bottom:.3125em;font-weight:bold}
+dl dd{margin-bottom:1.25em}
+abbr,acronym{text-transform:uppercase;font-size:90%;color:rgba(0,0,0,.8);border-bottom:1px dotted #ddd;cursor:help}
+abbr{text-transform:none}
+blockquote{margin:0 0 1.25em;padding:.5625em 1.25em 0 1.1875em;border-left:1px solid #ddd}
+blockquote cite{display:block;font-size:.9375em;color:rgba(0,0,0,.6)}
+blockquote cite:before{content:"\2014 \0020"}
+blockquote cite a,blockquote cite a:visited{color:rgba(0,0,0,.6)}
+blockquote,blockquote p{line-height:1.6;color:rgba(0,0,0,.85)}
+@media only screen and (min-width:768px){h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2}
+h1{font-size:2.75em}
+h2{font-size:2.3125em}
+h3,#toctitle,.sidebarblock>.content>.title{font-size:1.6875em}
+h4{font-size:1.4375em}}
+table{background:#fff;margin-bottom:1.25em;border:solid 1px #dedede}
+table thead,table tfoot{background:#f7f8f7;font-weight:bold}
+table thead tr th,table thead tr td,table tfoot tr th,table tfoot tr td{padding:.5em .625em .625em;font-size:inherit;color:rgba(0,0,0,.8);text-align:left}
+table tr th,table tr td{padding:.5625em .625em;font-size:inherit;color:rgba(0,0,0,.8)}
+table tr.even,table tr.alt,table tr:nth-of-type(even){background:#f8f8f7}
+table thead tr th,table tfoot tr th,table tbody tr td,table tr td,table tfoot tr td{display:table-cell;line-height:1.6}
+body{tab-size:4}
+h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2;word-spacing:-.05em}
+h1 strong,h2 strong,h3 strong,#toctitle strong,.sidebarblock>.content>.title strong,h4 strong,h5 strong,h6 strong{font-weight:400}
+.clearfix:before,.clearfix:after,.float-group:before,.float-group:after{content:" ";display:table}
+.clearfix:after,.float-group:after{clear:both}
+*:not(pre)>code{font-size:.9375em;font-style:normal!important;letter-spacing:0;padding:.1em .5ex;word-spacing:-.15em;background-color:#f7f7f8;-webkit-border-radius:4px;border-radius:4px;line-height:1.45;text-rendering:optimizeSpeed}
+pre,pre>code{line-height:1.45;color:rgba(0,0,0,.9);font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;text-rendering:optimizeSpeed}
+.keyseq{color:rgba(51,51,51,.8)}
+kbd{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;display:inline-block;color:rgba(0,0,0,.8);font-size:.65em;line-height:1.45;background-color:#f7f7f7;border:1px solid #ccc;-webkit-border-radius:3px;border-radius:3px;-webkit-box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em white inset;box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em #fff inset;margin:0 .15em;padding:.2em .5em;vertical-align:middle;position:relative;top:-.1em;white-space:nowrap}
+.keyseq kbd:first-child{margin-left:0}
+.keyseq kbd:last-child{margin-right:0}
+.menuseq,.menu{color:rgba(0,0,0,.8)}
+b.button:before,b.button:after{position:relative;top:-1px;font-weight:400}
+b.button:before{content:"[";padding:0 3px 0 2px}
+b.button:after{content:"]";padding:0 2px 0 3px}
+p a>code:hover{color:rgba(0,0,0,.9)}
+#header,#content,#footnotes,#footer{width:100%;margin-left:auto;margin-right:auto;margin-top:0;margin-bottom:0;max-width:62.5em;*zoom:1;position:relative;padding-left:.9375em;padding-right:.9375em}
+#header:before,#header:after,#content:before,#content:after,#footnotes:before,#footnotes:after,#footer:before,#footer:after{content:" ";display:table}
+#header:after,#content:after,#footnotes:after,#footer:after{clear:both}
+#content{margin-top:1.25em}
+#content:before{content:none}
+#header>h1:first-child{color:rgba(0,0,0,.85);margin-top:2.25rem;margin-bottom:0}
+#header>h1:first-child+#toc{margin-top:8px;border-top:1px solid #ddddd8}
+#header>h1:only-child,body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #ddddd8;padding-bottom:8px}
+#header .details{border-bottom:1px solid #ddddd8;line-height:1.45;padding-top:.25em;padding-bottom:.25em;padding-left:.25em;color:rgba(0,0,0,.6);display:-ms-flexbox;display:-webkit-flex;display:flex;-ms-flex-flow:row wrap;-webkit-flex-flow:row wrap;flex-flow:row wrap}
+#header .details span:first-child{margin-left:-.125em}
+#header .details span.email a{color:rgba(0,0,0,.85)}
+#header .details br{display:none}
+#header .details br+span:before{content:"\00a0\2013\00a0"}
+#header .details br+span.author:before{content:"\00a0\22c5\00a0";color:rgba(0,0,0,.85)}
+#header .details br+span#revremark:before{content:"\00a0|\00a0"}
+#header #revnumber{text-transform:capitalize}
+#header #revnumber:after{content:"\00a0"}
+#content>h1:first-child:not([class]){color:rgba(0,0,0,.85);border-bottom:1px solid #ddddd8;padding-bottom:8px;margin-top:0;padding-top:1rem;margin-bottom:1.25rem}
+#toc{border-bottom:1px solid #efefed;padding-bottom:.5em}
+#toc>ul{margin-left:.125em}
+#toc ul.sectlevel0>li>a{font-style:italic}
+#toc ul.sectlevel0 ul.sectlevel1{margin:.5em 0}
+#toc ul{font-family:"Open Sans","DejaVu Sans",sans-serif;list-style-type:none}
+#toc li{line-height:1.3334;margin-top:.3334em}
+#toc a{text-decoration:none}
+#toc a:active{text-decoration:underline}
+#toctitle{color:#7a2518;font-size:1.2em}
+@media only screen and (min-width:768px){#toctitle{font-size:1.375em}
+body.toc2{padding-left:15em;padding-right:0}
+#toc.toc2{margin-top:0!important;background-color:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #efefed;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
+#toc.toc2 #toctitle{margin-top:0;margin-bottom:.8rem;font-size:1.2em}
+#toc.toc2>ul{font-size:.9em;margin-bottom:0}
+#toc.toc2 ul ul{margin-left:0;padding-left:1em}
+#toc.toc2 ul.sectlevel0 ul.sectlevel1{padding-left:0;margin-top:.5em;margin-bottom:.5em}
+body.toc2.toc-right{padding-left:0;padding-right:15em}
+body.toc2.toc-right #toc.toc2{border-right-width:0;border-left:1px solid #efefed;left:auto;right:0}}
+@media only screen and (min-width:1280px){body.toc2{padding-left:20em;padding-right:0}
+#toc.toc2{width:20em}
+#toc.toc2 #toctitle{font-size:1.375em}
+#toc.toc2>ul{font-size:.95em}
+#toc.toc2 ul ul{padding-left:1.25em}
+body.toc2.toc-right{padding-left:0;padding-right:20em}}
+#content #toc{border-style:solid;border-width:1px;border-color:#e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;-webkit-border-radius:4px;border-radius:4px}
+#content #toc>:first-child{margin-top:0}
+#content #toc>:last-child{margin-bottom:0}
+#footer{max-width:100%;background-color:rgba(0,0,0,.8);padding:1.25em}
+#footer-text{color:rgba(255,255,255,.8);line-height:1.44}
+.sect1{padding-bottom:.625em}
+@media only screen and (min-width:768px){.sect1{padding-bottom:1.25em}}
+.sect1+.sect1{border-top:1px solid #efefed}
+#content h1>a.anchor,h2>a.anchor,h3>a.anchor,#toctitle>a.anchor,.sidebarblock>.content>.title>a.anchor,h4>a.anchor,h5>a.anchor,h6>a.anchor{position:absolute;z-index:1001;width:1.5ex;margin-left:-1.5ex;display:block;text-decoration:none!important;visibility:hidden;text-align:center;font-weight:400}
+#content h1>a.anchor:before,h2>a.anchor:before,h3>a.anchor:before,#toctitle>a.anchor:before,.sidebarblock>.content>.title>a.anchor:before,h4>a.anchor:before,h5>a.anchor:before,h6>a.anchor:before{content:"\00A7";font-size:.85em;display:block;padding-top:.1em}
+#content h1:hover>a.anchor,#content h1>a.anchor:hover,h2:hover>a.anchor,h2>a.anchor:hover,h3:hover>a.anchor,#toctitle:hover>a.anchor,.sidebarblock>.content>.title:hover>a.anchor,h3>a.anchor:hover,#toctitle>a.anchor:hover,.sidebarblock>.content>.title>a.anchor:hover,h4:hover>a.anchor,h4>a.anchor:hover,h5:hover>a.anchor,h5>a.anchor:hover,h6:hover>a.anchor,h6>a.anchor:hover{visibility:visible}
+#content h1>a.link,h2>a.link,h3>a.link,#toctitle>a.link,.sidebarblock>.content>.title>a.link,h4>a.link,h5>a.link,h6>a.link{color:#ba3925;text-decoration:none}
+#content h1>a.link:hover,h2>a.link:hover,h3>a.link:hover,#toctitle>a.link:hover,.sidebarblock>.content>.title>a.link:hover,h4>a.link:hover,h5>a.link:hover,h6>a.link:hover{color:#a53221}
+.audioblock,.imageblock,.literalblock,.listingblock,.stemblock,.videoblock{margin-bottom:1.25em}
+.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{text-rendering:optimizeLegibility;text-align:left;font-family:"Noto Serif","DejaVu Serif",serif;font-size:1rem;font-style:italic}
+table.tableblock>caption.title{white-space:nowrap;overflow:visible;max-width:0}
+.paragraph.lead>p,#preamble>.sectionbody>.paragraph:first-of-type p{color:rgba(0,0,0,.85)}
+table.tableblock #preamble>.sectionbody>.paragraph:first-of-type p{font-size:inherit}
+.admonitionblock>table{border-collapse:separate;border:0;background:none;width:100%}
+.admonitionblock>table td.icon{text-align:center;width:80px}
+.admonitionblock>table td.icon img{max-width:none}
+.admonitionblock>table td.icon .title{font-weight:bold;font-family:"Open Sans","DejaVu Sans",sans-serif;text-transform:uppercase}
+.admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #ddddd8;color:rgba(0,0,0,.6)}
+.admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}
+.exampleblock>.content{border-style:solid;border-width:1px;border-color:#e6e6e6;margin-bottom:1.25em;padding:1.25em;background:#fff;-webkit-border-radius:4px;border-radius:4px}
+.exampleblock>.content>:first-child{margin-top:0}
+.exampleblock>.content>:last-child{margin-bottom:0}
+.sidebarblock{border-style:solid;border-width:1px;border-color:#e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;-webkit-border-radius:4px;border-radius:4px}
+.sidebarblock>:first-child{margin-top:0}
+.sidebarblock>:last-child{margin-bottom:0}
+.sidebarblock>.content>.title{color:#7a2518;margin-top:0;text-align:center}
+.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
+.literalblock pre,.listingblock pre:not(.highlight),.listingblock pre[class="highlight"],.listingblock pre[class^="highlight "],.listingblock pre.CodeRay,.listingblock pre.prettyprint{background:#f7f7f8}
+.sidebarblock .literalblock pre,.sidebarblock .listingblock pre:not(.highlight),.sidebarblock .listingblock pre[class="highlight"],.sidebarblock .listingblock pre[class^="highlight "],.sidebarblock .listingblock pre.CodeRay,.sidebarblock .listingblock pre.prettyprint{background:#f2f1f1}
+.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{-webkit-border-radius:4px;border-radius:4px;word-wrap:break-word;padding:1em;font-size:.8125em}
+.literalblock pre.nowrap,.literalblock pre[class].nowrap,.listingblock pre.nowrap,.listingblock pre[class].nowrap{overflow-x:auto;white-space:pre;word-wrap:normal}
+@media only screen and (min-width:768px){.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{font-size:.90625em}}
+@media only screen and (min-width:1280px){.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{font-size:1em}}
+.literalblock.output pre{color:#f7f7f8;background-color:rgba(0,0,0,.9)}
+.listingblock pre.highlightjs{padding:0}
+.listingblock pre.highlightjs>code{padding:1em;-webkit-border-radius:4px;border-radius:4px}
+.listingblock pre.prettyprint{border-width:0}
+.listingblock>.content{position:relative}
+.listingblock code[data-lang]:before{display:none;content:attr(data-lang);position:absolute;font-size:.75em;top:.425rem;right:.5rem;line-height:1;text-transform:uppercase;color:#999}
+.listingblock:hover code[data-lang]:before{display:block}
+.listingblock.terminal pre .command:before{content:attr(data-prompt);padding-right:.5em;color:#999}
+.listingblock.terminal pre .command:not([data-prompt]):before{content:"$"}
+table.pyhltable{border-collapse:separate;border:0;margin-bottom:0;background:none}
+table.pyhltable td{vertical-align:top;padding-top:0;padding-bottom:0;line-height:1.45}
+table.pyhltable td.code{padding-left:.75em;padding-right:0}
+pre.pygments .lineno,table.pyhltable td:not(.code){color:#999;padding-left:0;padding-right:.5em;border-right:1px solid #ddddd8}
+pre.pygments .lineno{display:inline-block;margin-right:.25em}
+table.pyhltable .linenodiv{background:none!important;padding-right:0!important}
+.quoteblock{margin:0 1em 1.25em 1.5em;display:table}
+.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock blockquote,.quoteblock blockquote p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
+.quoteblock blockquote{margin:0;padding:0;border:0}
+.quoteblock blockquote:before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
+.quoteblock blockquote>.paragraph:last-child p{margin-bottom:0}
+.quoteblock .attribution{margin-top:.5em;margin-right:.5ex;text-align:right}
+.quoteblock .quoteblock{margin-left:0;margin-right:0;padding:.5em 0;border-left:3px solid rgba(0,0,0,.6)}
+.quoteblock .quoteblock blockquote{padding:0 0 0 .75em}
+.quoteblock .quoteblock blockquote:before{display:none}
+.verseblock{margin:0 1em 1.25em 1em}
+.verseblock pre{font-family:"Open Sans","DejaVu Sans",sans;font-size:1.15rem;color:rgba(0,0,0,.85);font-weight:300;text-rendering:optimizeLegibility}
+.verseblock pre strong{font-weight:400}
+.verseblock .attribution{margin-top:1.25rem;margin-left:.5ex}
+.quoteblock .attribution,.verseblock .attribution{font-size:.9375em;line-height:1.45;font-style:italic}
+.quoteblock .attribution br,.verseblock .attribution br{display:none}
+.quoteblock .attribution cite,.verseblock .attribution cite{display:block;letter-spacing:-.025em;color:rgba(0,0,0,.6)}
+.quoteblock.abstract{margin:0 0 1.25em 0;display:block}
+.quoteblock.abstract blockquote,.quoteblock.abstract blockquote p{text-align:left;word-spacing:0}
+.quoteblock.abstract blockquote:before,.quoteblock.abstract blockquote p:first-of-type:before{display:none}
+table.tableblock{max-width:100%;border-collapse:separate}
+table.tableblock td>.paragraph:last-child p>p:last-child,table.tableblock th>p:last-child,table.tableblock td>p:last-child{margin-bottom:0}
+table.tableblock,th.tableblock,td.tableblock{border:0 solid #dedede}
+table.grid-all th.tableblock,table.grid-all td.tableblock{border-width:0 1px 1px 0}
+table.grid-all tfoot>tr>th.tableblock,table.grid-all tfoot>tr>td.tableblock{border-width:1px 1px 0 0}
+table.grid-cols th.tableblock,table.grid-cols td.tableblock{border-width:0 1px 0 0}
+table.grid-all *>tr>.tableblock:last-child,table.grid-cols *>tr>.tableblock:last-child{border-right-width:0}
+table.grid-rows th.tableblock,table.grid-rows td.tableblock{border-width:0 0 1px 0}
+table.grid-all tbody>tr:last-child>th.tableblock,table.grid-all tbody>tr:last-child>td.tableblock,table.grid-all thead:last-child>tr>th.tableblock,table.grid-rows tbody>tr:last-child>th.tableblock,table.grid-rows tbody>tr:last-child>td.tableblock,table.grid-rows thead:last-child>tr>th.tableblock{border-bottom-width:0}
+table.grid-rows tfoot>tr>th.tableblock,table.grid-rows tfoot>tr>td.tableblock{border-width:1px 0 0 0}
+table.frame-all{border-width:1px}
+table.frame-sides{border-width:0 1px}
+table.frame-topbot{border-width:1px 0}
+th.halign-left,td.halign-left{text-align:left}
+th.halign-right,td.halign-right{text-align:right}
+th.halign-center,td.halign-center{text-align:center}
+th.valign-top,td.valign-top{vertical-align:top}
+th.valign-bottom,td.valign-bottom{vertical-align:bottom}
+th.valign-middle,td.valign-middle{vertical-align:middle}
+table thead th,table tfoot th{font-weight:bold}
+tbody tr th{display:table-cell;line-height:1.6;background:#f7f8f7}
+tbody tr th,tbody tr th p,tfoot tr th,tfoot tr th p{color:rgba(0,0,0,.8);font-weight:bold}
+p.tableblock>code:only-child{background:none;padding:0}
+p.tableblock{font-size:1em}
+td>div.verse{white-space:pre}
+ol{margin-left:1.75em}
+ul li ol{margin-left:1.5em}
+dl dd{margin-left:1.125em}
+dl dd:last-child,dl dd:last-child>:last-child{margin-bottom:0}
+ol>li p,ul>li p,ul dd,ol dd,.olist .olist,.ulist .ulist,.ulist .olist,.olist .ulist{margin-bottom:.625em}
+ul.unstyled,ol.unnumbered,ul.checklist,ul.none{list-style-type:none}
+ul.unstyled,ol.unnumbered,ul.checklist{margin-left:.625em}
+ul.checklist li>p:first-child>.fa-square-o:first-child,ul.checklist li>p:first-child>.fa-check-square-o:first-child{width:1em;font-size:.85em}
+ul.checklist li>p:first-child>input[type="checkbox"]:first-child{width:1em;position:relative;top:1px}
+ul.inline{margin:0 auto .625em auto;margin-left:-1.375em;margin-right:0;padding:0;list-style:none;overflow:hidden}
+ul.inline>li{list-style:none;float:left;margin-left:1.375em;display:block}
+ul.inline>li>*{display:block}
+.unstyled dl dt{font-weight:400;font-style:normal}
+ol.arabic{list-style-type:decimal}
+ol.decimal{list-style-type:decimal-leading-zero}
+ol.loweralpha{list-style-type:lower-alpha}
+ol.upperalpha{list-style-type:upper-alpha}
+ol.lowerroman{list-style-type:lower-roman}
+ol.upperroman{list-style-type:upper-roman}
+ol.lowergreek{list-style-type:lower-greek}
+.hdlist>table,.colist>table{border:0;background:none}
+.hdlist>table>tbody>tr,.colist>table>tbody>tr{background:none}
+td.hdlist1,td.hdlist2{vertical-align:top;padding:0 .625em}
+td.hdlist1{font-weight:bold;padding-bottom:1.25em}
+.literalblock+.colist,.listingblock+.colist{margin-top:-.5em}
+.colist>table tr>td:first-of-type{padding:0 .75em;line-height:1}
+.colist>table tr>td:last-of-type{padding:.25em 0}
+.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}
+.imageblock.left,.imageblock[style*="float: left"]{margin:.25em .625em 1.25em 0}
+.imageblock.right,.imageblock[style*="float: right"]{margin:.25em 0 1.25em .625em}
+.imageblock>.title{margin-bottom:0}
+.imageblock.thumb,.imageblock.th{border-width:6px}
+.imageblock.thumb>.title,.imageblock.th>.title{padding:0 .125em}
+.image.left,.image.right{margin-top:.25em;margin-bottom:.25em;display:inline-block;line-height:0}
+.image.left{margin-right:.625em}
+.image.right{margin-left:.625em}
+a.image{text-decoration:none;display:inline-block}
+a.image object{pointer-events:none}
+sup.footnote,sup.footnoteref{font-size:.875em;position:static;vertical-align:super}
+sup.footnote a,sup.footnoteref a{text-decoration:none}
+sup.footnote a:active,sup.footnoteref a:active{text-decoration:underline}
+#footnotes{padding-top:.75em;padding-bottom:.75em;margin-bottom:.625em}
+#footnotes hr{width:20%;min-width:6.25em;margin:-.25em 0 .75em 0;border-width:1px 0 0 0}
+#footnotes .footnote{padding:0 .375em 0 .225em;line-height:1.3334;font-size:.875em;margin-left:1.2em;text-indent:-1.05em;margin-bottom:.2em}
+#footnotes .footnote a:first-of-type{font-weight:bold;text-decoration:none}
+#footnotes .footnote:last-of-type{margin-bottom:0}
+#content #footnotes{margin-top:-.625em;margin-bottom:0;padding:.75em 0}
+.gist .file-data>table{border:0;background:#fff;width:100%;margin-bottom:0}
+.gist .file-data>table td.line-data{width:99%}
+div.unbreakable{page-break-inside:avoid}
+.big{font-size:larger}
+.small{font-size:smaller}
+.underline{text-decoration:underline}
+.overline{text-decoration:overline}
+.line-through{text-decoration:line-through}
+.aqua{color:#00bfbf}
+.aqua-background{background-color:#00fafa}
+.black{color:#000}
+.black-background{background-color:#000}
+.blue{color:#0000bf}
+.blue-background{background-color:#0000fa}
+.fuchsia{color:#bf00bf}
+.fuchsia-background{background-color:#fa00fa}
+.gray{color:#606060}
+.gray-background{background-color:#7d7d7d}
+.green{color:#006000}
+.green-background{background-color:#007d00}
+.lime{color:#00bf00}
+.lime-background{background-color:#00fa00}
+.maroon{color:#600000}
+.maroon-background{background-color:#7d0000}
+.navy{color:#000060}
+.navy-background{background-color:#00007d}
+.olive{color:#606000}
+.olive-background{background-color:#7d7d00}
+.purple{color:#600060}
+.purple-background{background-color:#7d007d}
+.red{color:#bf0000}
+.red-background{background-color:#fa0000}
+.silver{color:#909090}
+.silver-background{background-color:#bcbcbc}
+.teal{color:#006060}
+.teal-background{background-color:#007d7d}
+.white{color:#bfbfbf}
+.white-background{background-color:#fafafa}
+.yellow{color:#bfbf00}
+.yellow-background{background-color:#fafa00}
+span.icon>.fa{cursor:default}
+.admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,.5);cursor:default}
+.admonitionblock td.icon .icon-note:before{content:"\f05a";color:#19407c}
+.admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,.8);color:#111}
+.admonitionblock td.icon .icon-warning:before{content:"\f071";color:#bf6900}
+.admonitionblock td.icon .icon-caution:before{content:"\f06d";color:#bf3400}
+.admonitionblock td.icon .icon-important:before{content:"\f06a";color:#bf0000}
+.conum[data-value]{display:inline-block;color:#fff!important;background-color:rgba(0,0,0,.8);-webkit-border-radius:100px;border-radius:100px;text-align:center;font-size:.75em;width:1.67em;height:1.67em;line-height:1.67em;font-family:"Open Sans","DejaVu Sans",sans-serif;font-style:normal;font-weight:bold}
+.conum[data-value] *{color:#fff!important}
+.conum[data-value]+b{display:none}
+.conum[data-value]:after{content:attr(data-value)}
+pre .conum[data-value]{position:relative;top:-.125em}
+b.conum *{color:inherit!important}
+.conum:not([data-value]):empty{display:none}
+dt,th.tableblock,td.content,div.footnote{text-rendering:optimizeLegibility}
+h1,h2,p,td.content,span.alt{letter-spacing:-.01em}
+p strong,td.content strong,div.footnote strong{letter-spacing:-.005em}
+p,blockquote,dt,td.content,span.alt{font-size:1.0625rem}
+p{margin-bottom:1.25rem}
+.sidebarblock p,.sidebarblock dt,.sidebarblock td.content,p.tableblock{font-size:1em}
+.exampleblock>.content{background-color:#fffef7;border-color:#e0e0dc;-webkit-box-shadow:0 1px 4px #e0e0dc;box-shadow:0 1px 4px #e0e0dc}
+.print-only{display:none!important}
+@media print{@page{margin:1.25cm .75cm}
+*{-webkit-box-shadow:none!important;box-shadow:none!important;text-shadow:none!important}
+a{color:inherit!important;text-decoration:underline!important}
+a.bare,a[href^="#"],a[href^="mailto:"]{text-decoration:none!important}
+a[href^="http:"]:not(.bare):after,a[href^="https:"]:not(.bare):after{content:"(" attr(href) ")";display:inline-block;font-size:.875em;padding-left:.25em}
+abbr[title]:after{content:" (" attr(title) ")"}
+pre,blockquote,tr,img,object,svg{page-break-inside:avoid}
+thead{display:table-header-group}
+svg{max-width:100%}
+p,blockquote,dt,td.content{font-size:1em;orphans:3;widows:3}
+h2,h3,#toctitle,.sidebarblock>.content>.title{page-break-after:avoid}
+#toc,.sidebarblock,.exampleblock>.content{background:none!important}
+#toc{border-bottom:1px solid #ddddd8!important;padding-bottom:0!important}
+.sect1{padding-bottom:0!important}
+.sect1+.sect1{border:0!important}
+#header>h1:first-child{margin-top:1.25rem}
+body.book #header{text-align:center}
+body.book #header>h1:first-child{border:0!important;margin:2.5em 0 1em 0}
+body.book #header .details{border:0!important;display:block;padding:0!important}
+body.book #header .details span:first-child{margin-left:0!important}
+body.book #header .details br{display:block}
+body.book #header .details br+span:before{content:none!important}
+body.book #toc{border:0!important;text-align:left!important;padding:0!important;margin:0!important}
+body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-break-before:always}
+.listingblock code[data-lang]:before{display:block}
+#footer{background:none!important;padding:0 .9375em}
+#footer-text{color:rgba(0,0,0,.6)!important;font-size:.9em}
+.hide-on-print{display:none!important}
+.print-only{display:block!important}
+.hide-for-print{display:none!important}
+.show-for-print{display:inherit!important}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
+</head>
+<body class="book toc2 toc-left">
+<div id="header">
+<h1>Spring Cloud Data Flow Server for OpenShift</h1>
+<div class="details">
+<span id="author" class="author">Donovan Muller</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel0">
+<li><a href="#introduction">Introduction</a>
+<ul class="sectlevel1">
+<li><a href="#_introducing_spring_cloud_data_flow_for_openshift">1. Introducing Spring Cloud Data Flow for OpenShift</a></li>
+<li><a href="#spring-cloud-data-flow-overview">2. Spring Cloud Data Flow</a></li>
+<li><a href="#_spring_cloud_stream">3. Spring Cloud Stream</a></li>
+<li><a href="#_spring_cloud_task">4. Spring Cloud Task</a></li>
+</ul>
+</li>
+<li><a href="#features">Features</a>
+<ul class="sectlevel1">
+<li><a href="#_support_for_maven_resource">5. Support for Maven Resource</a></li>
+<li><a href="#_build_hashing_for_maven_resource_apps">6. Build Hashing for Maven Resource Apps</a></li>
+<li><a href="#_volumes_and_volume_mounts">7. Volumes and Volume Mounts</a></li>
+</ul>
+</li>
+<li><a href="#getting-started">Getting Started</a>
+<ul class="sectlevel1">
+<li><a href="#_deploying_streams_on_openshift">8. Deploying Streams on OpenShift</a>
+<ul class="sectlevel2">
+<li><a href="#_a_local_openshift_cluster_with_minishift">8.1. A local OpenShift cluster with minishift</a>
+<ul class="sectlevel3">
+<li><a href="#_installation_and_getting_started">8.1.1. Installation and Getting Started</a>
+<ul class="sectlevel4">
+<li><a href="#_openshift_console">OpenShift Console</a></li>
+<li><a href="#__code_oc_code_cli_tool"><code>oc</code> CLI tool</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_creating_a_new_project">8.2. Creating a new Project</a></li>
+<li><a href="#templates">8.3. Installing the Data Flow Server using OpenShift templates</a>
+<ul class="sectlevel3">
+<li><a href="#_installing_the_openshift_templates">8.3.1. Installing the OpenShift templates</a></li>
+<li><a href="#_creating_and_configuring_service_accounts">8.3.2. Creating and configuring Service Accounts</a></li>
+<li><a href="#_installing_the_data_flow_server">8.3.3. Installing the Data Flow Server</a></li>
+</ul>
+</li>
+<li><a href="#_download_and_run_the_spring_cloud_data_flow_shell">8.4. Download and run the Spring Cloud Data Flow Shell</a></li>
+<li><a href="#_registering_stream_applications_with_docker_resource">8.5. Registering Stream applications with Docker resource</a></li>
+<li><a href="#_deploy_a_simple_stream_in_the_shell">8.6. Deploy a simple stream in the shell</a></li>
+<li><a href="#_registering_stream_applications_with_maven_resource">8.7. Registering Stream applications with Maven resource</a></li>
+<li><a href="#_deploy_a_simple_stream_in_the_shell_2">8.8. Deploy a simple stream in the shell</a></li>
+</ul>
+</li>
+<li><a href="#_deploying_tasks_on_openshift">9. Deploying Tasks on OpenShift</a>
+<ul class="sectlevel2">
+<li><a href="#_registering_task_application_with_maven_resource">9.1. Registering Task application with Maven resource</a></li>
+<li><a href="#_launch_a_simple_task_in_the_shell">9.2. Launch a simple task in the shell</a>
+<ul class="sectlevel3">
+<li><a href="#_cleanup_completed_tasks">9.2.1. Cleanup completed tasks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#configuration">Configuration</a>
+<ul class="sectlevel1">
+<li><a href="#_maven_configuration">10. Maven Configuration</a></li>
+<li><a href="#_dockerfile_resolution_strategies">11. Dockerfile Resolution Strategies</a></li>
+</ul>
+</li>
+<li><a href="#server">Server Implementation</a>
+<ul class="sectlevel1">
+<li><a href="#_server_properties">12. Server Properties</a>
+<ul class="sectlevel2">
+<li><a href="#_openshift_specific_properties">12.1. OpenShift Specific Properties</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#application">Application Properties</a>
+<ul class="sectlevel1">
+<li><a href="#_supported_application_properties">13. Supported Application Properties</a></li>
+</ul>
+</li>
+<li><a href="#deployment">Deployment Properties</a>
+<ul class="sectlevel1">
+<li><a href="#_supported_deployment_properties">14. Supported Deployment Properties</a></li>
+</ul>
+</li>
+<li><a href="#howto">&#8216;How-to&#8217; guides</a>
+<ul class="sectlevel1">
+<li><a href="#_deploying_custom_stream_app_as_a_maven_resource">15. Deploying Custom Stream App as a Maven Resource</a>
+<ul class="sectlevel2">
+<li><a href="#_deploy_a_nexus_repository">15.1. Deploy a Nexus Repository</a></li>
+<li><a href="#_configuring_the_data_flow_server_for_openshift">15.2. Configuring the Data Flow Server for OpenShift</a></li>
+<li><a href="#_cloning_and_deploying_the_app">15.3. Cloning and Deploying the App</a></li>
+<li><a href="#_deploying_the_stream">15.4. Deploying the Stream</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<h1 id="introduction" class="sect0">Introduction</h1>
+<div class="sect1">
+<h2 id="_introducing_spring_cloud_data_flow_for_openshift">1. Introducing Spring Cloud Data Flow for OpenShift</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This project provides support for orchestrating long-running (<em>streaming</em>) and short-lived (<em>task/batch</em>) data microservices to OpenShift 3.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="spring-cloud-data-flow-overview">2. Spring Cloud Data Flow</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Data Flow is a cloud-native orchestration service for composable data microservices on modern runtimes. With Spring Cloud Data Flow, developers can create and orchestrate data pipelines for common use cases such as data ingest, real-time analytics, and data import/export.</p>
+</div>
+<div class="paragraph">
+<p>The Spring Cloud Data Flow architecture consists of a server that deploys <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.2.3.RELEASE/reference/htmlsingle/#streams">Streams</a> and <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.2.3.RELEASE/reference/htmlsingle/#spring-cloud-task-overview">Tasks</a>.  Streams are defined using a <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.2.3.RELEASE/reference/html/_dsl_syntax.html">DSL</a> or visually through the browser based designer UI.  Streams are based on the <a href="http://cloud.spring.io/spring-cloud-stream/">Spring Cloud Stream</a> programming model while Tasks are based on the <a href="http://cloud.spring.io/spring-cloud-task/">Spring Cloud Task</a> programming model. The sections below describe more information about creating your own custom Streams and Tasks</p>
+</div>
+<div class="paragraph">
+<p>For more details about the core architecture components and the supported features, please review Spring Cloud Data Flow&#8217;s <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.2.3.RELEASE/reference/htmlsingle/">core reference guide</a>. There&#8217;re several <a href="https://github.com/spring-cloud/spring-cloud-dataflow-samples">samples</a> available for reference.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_cloud_stream">3. Spring Cloud Stream</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Stream is a framework for building message-driven microservice applications. Spring Cloud Stream builds upon Spring Boot to create standalone, production-grade Spring applications, and uses Spring Integration to provide connectivity to message brokers. It provides opinionated configuration of middleware from several vendors, introducing the concepts of persistent publish-subscribe semantics, consumer groups, and partitions.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the core framework components and the supported features, please review Spring Cloud Stream&#8217;s <a href="http://docs.spring.io/spring-cloud-stream/docs/{scst-core-version}/reference/htmlsingle/">reference guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s a rich ecosystem of Spring Cloud Stream <a href="http://docs.spring.io/spring-cloud-stream-app-starters/docs/{scst-starters-core-version}/reference/htmlsingle">Application-Starters</a> that can be used either as standalone data microservice applications or in Spring Cloud Data Flow. For convenience, we have generated RabbitMQ and Apache Kafka variants of these application-starters that are available for use from <a href="http://repo.spring.io/libs-snapshot/org/springframework/cloud/stream/app/">Maven Repo</a> and <a href="https://hub.docker.com/r/springcloudstream/">Docker Hub</a> as maven artifacts and docker images, respectively.</p>
+</div>
+<div class="paragraph">
+<p>Do you have a requirement to develop custom applications? No problem. Refer to this guide to create <a href="http://docs.spring.io/spring-cloud-stream-app-starters/docs/{scst-starters-core-version}/reference/htmlsingle/#_creating_custom_artifacts">custom stream applications</a>. There&#8217;re several <a href="https://github.com/spring-cloud/spring-cloud-stream-samples">samples</a> available for reference.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_cloud_task">4. Spring Cloud Task</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Task makes it easy to create short-lived microservices. We provide capabilities that allow short-lived JVM processes to be executed on demand in a production environment.</p>
+</div>
+<div class="paragraph">
+<p>For more details about the core framework components and the supported features, please review Spring Cloud Task&#8217;s <a href="http://docs.spring.io/spring-cloud-task/docs/{sct-core-version}/reference/htmlsingle/">reference guide</a>.</p>
+</div>
+<div class="paragraph">
+<p>There&#8217;s a rich ecosystem of Spring Cloud Task <a href="http://docs.spring.io/spring-cloud-task-app-starters/docs/{sct-starters-core-version}/reference/htmlsingle">Application-Starters</a> that can be used either as standalone data microservice applications or in Spring Cloud Data Flow. For convenience, the generated application-starters are available for use from <a href="http://repo.spring.io/libs-snapshot/org/springframework/cloud/task/app/">Maven Repo</a>. There are several <a href="https://github.com/spring-cloud/spring-cloud-task/tree/master/spring-cloud-task-samples">samples</a> available for reference.</p>
+</div>
+</div>
+</div>
+<h1 id="features" class="sect0">Features</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The Data Flow Server for OpenShift includes the following features over and above those of the <a href="http://cloud.spring.io/spring-cloud-dataflow-server-kubernetes/">Kubernetes Server</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_support_for_maven_resource">5. Support for Maven Resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Possibly the most prominent feature of the OpenShift Server besides the ability to deploy to OpenShift is
+the ability to support Maven resources. The OpenShift Server supports Docker resources (<code>docker://</code>) just like the
+Kubernetes Server but can additionally handle Maven resources (<code>maven://</code>) enabled by the OpenShift
+<a href="https://docs.openshift.org/latest/dev_guide/builds.html">Build</a> mechanism.</p>
+</div>
+<div class="paragraph">
+<p>For example, both the below app registrations (via the Data Flow Shell) are valid and supported:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:>app register --name http-mvn --type source --uri maven://org.springframework.cloud.stream.app:http-source-rabbit:1.2.0.RELEASE
+dataflow:>app import --name http-docker --type source --uri app register --name http --type source --uri docker:springcloudstream/http-source-rabbit:1.2.0.RELEASE</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the <a href="#getting-started">Getting Started</a> section for examples of deploying both Docker and Maven resource types.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_build_hashing_for_maven_resource_apps">6. Build Hashing for Maven Resource Apps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When deploying Maven resource (<code>maven://</code>) based apps, an OpenShift <a href="https://docs.openshift.org/latest/dev_guide/builds.html">Build</a>
+will be triggered to build the Docker image that will in turn be deployed. It is not efficient to trigger a new build
+for an app that was already deployed and to which there are no changes detected in the Maven Jar artifact. The resulting image
+would essentially be identical every time.</p>
+</div>
+<div class="paragraph">
+<p>To help with this, the OpenShift Server will create a hash of the Maven artifact located in the local cache.
+On subsequent deploys of the same app (same Maven artifact) this hash will first be checked against existing
+buils and if found, a new build will not be triggered but instead the existing image will be used.</p>
+</div>
+<div class="paragraph">
+<p>This feature can be disabled by specifying the <code>spring.cloud.deployer.openshift.forceBuild=true</code> as either
+a deployer (affects all deployed apps) or deployment (on a per app basis) property.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_volumes_and_volume_mounts">7. Volumes and Volume Mounts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Volumes and volume mounts provide the ability for a Spring Cloud Stream application to access persistent storage
+made available on the OpenShift cluster. The supported volume and volume mount types are determined by the
+underlying <a href="https://github.com/fabric8io/kubernetes-model">kubernetes-model</a> library. All of the volume types
+that have a generated mode are supported.</p>
+</div>
+<div class="paragraph">
+<p>Volumes and volume mounts can be specified as server deployer properties as well as app deployment properties specified
+at deployment time. Both ways of defining the volumes and volume mounts are identical, where they are specified as a JSON
+representation of the kubernetes-client model.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Volumes and volume mounts defined at deployer level will be added to <em>all</em> deployed apps. This is handy for
+common shared folders that should be available to all apps.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Below is an example of a volumes and volume mounts defined as a server deployer property in the ConfigMap:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">spring.cloud.deployer.openshift:
+  volumes:
+    - name: testhostpath
+      hostPath:
+        path: /test/hostPath
+
+    - name: testpvc
+      persistentVolumeClaim:
+        claimName: testClaim
+        readOnly: true
+
+    - name: testnfs
+      nfs:
+        server: 10.0.0.1:111
+        path: /test/nfs
+
+  volumeMounts:
+    - name: testhostpath:
+      mountPath: /test/hostPath
+
+    - name: testpvc:
+      mountPath: /test/pvc
+
+    - name: testnfs:
+      mountPath: /test/nfs
+      readOnly: true</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The default value for <code>readOnly</code> is <code>false</code>. I.e. Container requests read/write access.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Examples of the deployment property (via the Data Flow Shell) variation of defining volumes and volume mounts below:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name test --definition "time | file"
+Created new stream 'timezoney'
+
+dataflow:&gt;stream deploy test --properties "app.file.spring.cloud.deployer.openshift.deployment.volumes=[{name: testhostpath, hostPath: { path: '/test/override/hostPath' }}],spring.cloud.deployer.openshift.deployment.volumeMounts=[{name: 'testhostpath', mountPath: '/test/hostPath'}]"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<h1 id="getting-started" class="sect0">Getting Started</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The Data Flow Server for OpenShift extends the Kubernetes Server implementation and therefore many of the configuration
+options and concepts are similar and can in fact be used with the OpenShift server.</p>
+</div>
+<div class="paragraph">
+<p>Refer to the Spring Cloud Data Flow Server for Kubernetes <a href="http://docs.spring.io/spring-cloud-dataflow-server-kubernetes/docs/1.2.3.RELEASE/reference/htmlsingle">reference guide</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_deploying_streams_on_openshift">8. Deploying Streams on OpenShift</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following guide assumes that you have a OpenShift 3 cluster available. This includes both <a href="https://www.openshift.org/">OpenShift Origin</a>
+and <a href="https://www.openshift.com/container-platform/">OpenShift Container Platform</a> offerings.</p>
+</div>
+<div class="paragraph">
+<p>If you do not have a OpenShift cluster available, see the next section which describes running a local OpenShift Origin cluster for development/testing
+otherwise continue to <a href="#templates">Installing the Data Flow Server using OpenShift templates</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_a_local_openshift_cluster_with_minishift">8.1. A local OpenShift cluster with minishift</h3>
+<div class="paragraph">
+<p>There are a few ways to stand up a local OpenShift Origin cluster on your machine for testing.
+These include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md"><code>oc cluster up</code></a></p>
+</li>
+<li>
+<p><a href="https://www.openshift.org/vm/">All-In-One VM</a></p>
+</li>
+<li>
+<p><a href="https://github.com/minishift/minishift">minishift</a></p>
+</li>
+<li>
+<p>and others</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For the purpose of this guide, the <a href="https://github.com/minishift/minishift">minishift</a> tool will be used.</p>
+</div>
+<div class="sect3">
+<h4 id="_installation_and_getting_started">8.1.1. Installation and Getting Started</h4>
+<div class="paragraph">
+<p>Install minishift as per the instructions <a href="https://github.com/minishift/minishift#installation">here</a>.
+Once you have installed minishift successfully, you can start up a OpenShift instance with <code>minishift start</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ minishift start --memory 4096 --cpus 4 --deploy-router
+Starting local OpenShift cluster...
+oc is now configured to use the cluster.
+Run this command to use the cluster:
+oc login --username=admin --password=admin
+$</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The <code>--deploy-router</code> option deploys the default <a href="https://docs.openshift.org/latest/install_config/router/default_haproxy_router.html">HAProxy Router</a>
+which is required to expose and access the Spring Cloud Data Flow UI and other tools.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect4">
+<h5 id="_openshift_console">OpenShift Console</h5>
+<div class="paragraph">
+<p>The OpenShift Console is a valuable interface into your cluster, it is recommended that you open the console with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ minishift console
+Opening OpenShift console in default browser...
+$</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>a browser window will open with the console login page. Login with <code>admin</code>/<code>admin</code> credentials.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-console.png" alt="OpenShift Console">
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Make sure you wait for the <code>docker-registry</code> and <code>router</code> deployments to successfully deploy before continuing.
+These resources are deployed to the <code>default</code> project.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect4">
+<h5 id="__code_oc_code_cli_tool"><code>oc</code> CLI tool</h5>
+<div class="paragraph">
+<p>You can also manage the local cluster with the <code>oc</code> CLI tool.
+If you do not have the <code>oc</code> tool installed, follow the instructions <a href="https://docs.openshift.org/latest/cli_reference/get_started_cli.html">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>Login and use the local instance with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc login --username=admin --password=admin
+Login successful.
+
+You have access to the following projects and can switch between them with 'oc project &lt;projectname&gt;':
+
+  * default
+    kube-system
+    openshift
+    openshift-infra
+
+Using project "default".
+$</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_a_new_project">8.2. Creating a new Project</h3>
+<div class="paragraph">
+<p>To group the resources created as part of this guide, create a new Project.
+You can do this using the Console or <code>oc</code> tool. Below is an example using the 'oc' tool:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc new-project scdf --description="Spring Cloud Data Flow"
+Now using project "scdf" on server "https://192.168.64.13:8443".
+...
+$</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The IP address (192.168.64.13) assigned will vary each time you use <code>minishift start</code>, so adjust accordingly.
+The active project should be <code>scdf</code> (check with <code>oc project</code>) and should be the project used for the rest of this guide.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="templates">8.3. Installing the Data Flow Server using OpenShift templates</h3>
+<div class="paragraph">
+<p>To install a Data Flow Server and supporting infrastructure components to OpenShift, we will use <a href="https://docs.openshift.org/latest/dev_guide/templates.html">OpenShift templates</a>.
+Templates allow you to deploy a predefined set of resources with sane default configurations which can be optionally configured via parameters for specific environments.</p>
+</div>
+<div class="paragraph">
+<p>The templates for the Data Flow Server for OpenShift are available in the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift"><code>src/etc/openshift</code></a>
+directory in this project&#8217;s <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift">GitHub repository</a>.
+There are several templates available:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift/scdf-template.yaml">Data Flow Server only</a> -
+This template only deploys the Spring Cloud Data Flow Server for OpenShift and no other resources.
+This template provides the capability to provide the configuration for Spring Cloud Stream binder implementation, RDBMS and Redis resources with sane defaults. This template is suited for
+environments where these existing resources are already deployed.</p>
+</li>
+<li>
+<p><a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift/scdf-ephemeral-datasources-template.yaml">Data Flow Server with ephemeral Datasources</a> -
+Deploys Data Flow Server for OpenShift as well as MySQL and Redis containers without persistent volumes.
+I.e. the data persisted by these containers will be lost on restart.</p>
+</li>
+<li>
+<p><a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift/scdf-ephemeral-datasources-kafka-template.yaml">Data Flow Server with ephemeral Datasources and Kafka binder</a> -
+Same as above but with an additional Kafka instance for use as the Spring Cloud Stream binder implementation.</p>
+</li>
+<li>
+<p><a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift/scdf-ephemeral-datasources-rabbitmq-template.yaml">Data Flow Server with ephemeral Datasources and RabbitMQ binder</a> -
+Same as above but with a RabbitMQ instance for use as the binder implementation.</p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_installing_the_openshift_templates">8.3.1. Installing the OpenShift templates</h4>
+<div class="paragraph">
+<p>You can install the above templates using the OpenShift Console or <code>oc</code> tool.
+You would have to clone or download the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift">Data Flow Server for OpenShift</a> project and
+import the templates in the <code>src/etc/openshift</code> directory one by one using the Console or <code>oc create -f &#8230;&#8203;</code>.</p>
+</div>
+<div class="paragraph">
+<p>However, a more convenient and the recommended way of installing all the templates is to run the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ curl https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.2.1.RELEASE/src/etc/openshift/install-templates.sh | bash
+Installing OpenShift templates into project 'scdf'...
+Archive:  /tmp/scdf-openshift-templates.zip
+  inflating: /tmp/scdf-openshift-templates/scdf-ephemeral-datasources-kafka-template.yaml
+  inflating: /tmp/scdf-openshift-templates/scdf-ephemeral-datasources-rabbitmq-template.yaml
+  inflating: /tmp/scdf-openshift-templates/scdf-ephemeral-datasources-template.yaml
+  inflating: /tmp/scdf-openshift-templates/scdf-sa.yaml
+  inflating: /tmp/scdf-openshift-templates/scdf-template.yaml
+Installing template '/tmp/scdf-openshift-templates/scdf-ephemeral-datasources-kafka-template.yaml'
+template "spring-cloud-dataflow-server-openshift-ephemeral-kafka" replaced
+Installing template '/tmp/scdf-openshift-templates/scdf-ephemeral-datasources-rabbitmq-template.yaml'
+template "spring-cloud-dataflow-server-openshift-ephemeral-rabbitmq" replaced
+Installing template '/tmp/scdf-openshift-templates/scdf-ephemeral-datasources-template.yaml'
+template "spring-cloud-dataflow-server-openshift-ephemeral-datasources" replaced
+Installing template '/tmp/scdf-openshift-templates/scdf-sa.yaml'
+serviceaccount "scdf" replaced
+Installing template '/tmp/scdf-openshift-templates/scdf-template.yaml'
+template "spring-cloud-dataflow-server-openshift" replaced
+Adding 'edit' role to 'scdf' Service Account...
+Adding 'scdf' Service Account to the 'anyuid' SCC...
+Templates installed.
+$</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will download all the templates and install them into the <code>scdf</code> project by default. It will also create and
+configure a required Service Account mentioned below.
+The project can be specified by using <code>-s scdf</code> after the <code>bash</code> command above.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_creating_and_configuring_service_accounts">8.3.2. Creating and configuring Service Accounts</h4>
+<div class="paragraph">
+<p>The Data Flow Server requires a <a href="https://docs.openshift.org/latest/dev_guide/service_accounts.html">Service Account</a> (named <code>scdf</code>),
+which grants it access to perform actions such as reading ConfigMaps and Secrets, creating Builds, etc.</p>
+</div>
+<div class="paragraph">
+<p>To create the <code>scdf</code> Service Account, use the <code>oc</code> tool from the <code>src/etc/openshift</code> directory:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc create -f scdf-sa.yaml
+...</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you used the <code>install-templates.sh</code> script above to install the templates, the <code>scdf</code>
+Service Account would have already been created for you.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>scdf</code> Service Account must have the <code>edit</code> <a href="https://docs.openshift.org/latest/admin_guide/manage_authorization_policy.html#viewing-roles-and-bindings">role</a>
+added to it in order to have the correct permissions to function properly.
+Add the <code>edit</code> role with the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc policy add-role-to-user edit system:serviceaccount:scdf:scdf
+...</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you used the <code>install-templates.sh</code> script above to install the templates, the <code>scdf</code>
+Service Account would already have the <code>edit</code> role added to it.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The <code>scdf</code> Service Account also needs to be added to the <code>anyuid</code> Security Context Constraint to allow the MySQL
+Pod to run using the <a href="https://docs.openshift.org/latest/admin_guide/manage_scc.html#enable-dockerhub-images-that-require-root"><code>root</code> user</a>.
+By default OpenShift starts a Pod using a random user Id. Add the Service Account to the <code>anyuid</code> SCC group with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc adm policy add-scc-to-user anyuid system:serviceaccount:scdf:scdf</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you used the <code>install-templates.sh</code> script above to install the templates, the <code>scdf</code>
+Service Account is already added to the <code>anyuid</code> SCC.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_installing_the_data_flow_server">8.3.3. Installing the Data Flow Server</h4>
+<div class="paragraph">
+<p>For this guide we&#8217;ll use the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift/scdf-ephemeral-datasources-kafka-template.yaml">Data Flow Server with ephemeral Datasources and Kafka binder</a>
+template to start a Data Flow Server in the <code>scdf</code> project.
+First, using the OpenShift Console, click the <em>Add to Project</em> button. You should see the list of templates mentioned above.
+Choose the <code>spring-cloud-dataflow-server-openshift-ephemeral-kafka</code> template.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-templates.png" alt="Data Flow Server template">
+</div>
+</div>
+<div class="paragraph">
+<p>Default configuration values are provided but can be updated to meet your needs if necessary.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>To avoid deployments failing due to long image pull times, you can manually pull the requires images.
+Note that you should first change your local Docker client to use the Docker engine in the minishift VM</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ eval $(minishift docker-env)
+$ curl https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.2.1.RELEASE/src/etc/openshift/pull-images.sh | bash</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above step is optional as OpenShift will also pull the required images. However, depending on your network speed, deployments may fail
+due to timeout. If this happens, simply start another deployment of the component by click the <em>Deploy</em> button when viewing the deployment.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>After updating the configuration values or leaving the default values, click the <em>Create</em> button to deploy this template.</p>
+</div>
+<div class="paragraph">
+<p>Pulling the various Docker images may take some time, so please be patient.
+Once all the images have been pulled, the various pods will start and should all appear as dark blue circles.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-deployed.png" alt="Data Flow Server deployed">
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The Data Flow Server will by default deploy apps only in the project that it itself is deployed. I.e. a Data Flow Server
+deployed in the <code>default</code> project will not be able to deploy applications to the <code>scdf</code> project. The recommended configuration
+is a Data Flow Server per project.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Verify that the Data Flow Server has started successfully by clicking on the exposed <a href="https://docs.openshift.org/latest/dev_guide/routes.html">Route</a> URL.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-dashboard.png" alt="Data Flow Server UI">
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The UI is mapped to <code>/dashboard</code>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you&#8217;d like to reset or perhaps try another template, you can remove the Data Flow Server and other
+resources created by the template with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc delete all --selector=template=scdf
+$ oc delete cm --selector=template=scdf
+$ oc delete secret --selector=template=scdf</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_download_and_run_the_spring_cloud_data_flow_shell">8.4. Download and run the Spring Cloud Data Flow Shell</h3>
+<div class="paragraph">
+<p>Download and run the Shell, targeting the Data Flow Server exposed via a Route.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ wget http://repo.spring.io/release/org/springframework/cloud/spring-cloud-dataflow-shell/1.2.3.RELEASE/spring-cloud-dataflow-shell-1.2.3.RELEASE.jar
+$ java -jar spring-cloud-dataflow-shell-1.2.3.RELEASE.jar --dataflow.uri=http://scdf-kafka-scdf.192.168.64.15.xip.io/
+
+  ____                              ____ _                __
+ / ___| _ __  _ __(_)_ __   __ _   / ___| | ___  _   _  __| |
+ \___ \| '_ \| '__| | '_ \ / _` | | |   | |/ _ \| | | |/ _` |
+  ___) | |_) | |  | | | | | (_| | | |___| | (_) | |_| | (_| |
+ |____/| .__/|_|  |_|_| |_|\__, |  \____|_|\___/ \__,_|\__,_|
+  ____ |_|    _          __|___/                 __________
+ |  _ \  __ _| |_ __ _  |  ___| | _____      __  \ \ \ \ \ \
+ | | | |/ _` | __/ _` | | |_  | |/ _ \ \ /\ / /   \ \ \ \ \ \
+ | |_| | (_| | || (_| | |  _| | | (_) \ V  V /    / / / / / /
+ |____/ \__,_|\__\__,_| |_|   |_|\___/ \_/\_/    /_/_/_/_/_/
+
+1.2.3.RELEASE
+
+Welcome to the Spring Cloud Data Flow shell. For assistance hit TAB or type "help".
+dataflow:></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registering_stream_applications_with_docker_resource">8.5. Registering Stream applications with Docker resource</h3>
+<div class="paragraph">
+<p>Now register all out-of-the-box stream applications using the Docker resource type, built with the Kafka binder in bulk with the following command.</p>
+</div>
+<div class="paragraph">
+<p>For more details, review how to <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.2.3.RELEASE/reference/html/spring-cloud-dataflow-register-apps.html">register applications</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app import --uri http://bit.ly/stream-applications-kafka-docker
+Successfully registered applications: [source.tcp, sink.jdbc, source.http, sink.rabbit, source.rabbit, source.ftp, sink.gpfdist, processor.transform, source.loggregator, source.sftp, processor.filter, sink.cassandra, processor.groovy-filter, sink.router, source.trigger, sink.hdfs-dataset, processor.splitter, source.load-generator, processor.tcp-client, source.time, source.gemfire, source.twitterstream, sink.tcp, source.jdbc, sink.field-value-counter, sink.redis-pubsub, sink.hdfs, processor.bridge, processor.pmml, processor.httpclient, source.s3, sink.ftp, sink.log, sink.gemfire, sink.aggregate-counter, sink.throughput, source.triggertask, sink.s3, source.gemfire-cq, source.jms, source.tcp-client, processor.scriptable-transform, sink.counter, sink.websocket, source.mongodb, source.mail, processor.groovy-transform, source.syslog]</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploy_a_simple_stream_in_the_shell">8.6. Deploy a simple stream in the shell</h3>
+<div class="paragraph">
+<p>Create a simple <code>ticktock</code> stream definition and deploy it immediately using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name ticktock --definition "time | log" --deploy
+Created new stream 'ticktock'
+Deployment request has been sent</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Watch the OpenShift Console as the two application resources are created and the Pods are started.
+Once the Docker images are pulled and the Pods are started up, you should see the Pods with dark blue circles:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-stream-deployed.png" alt="ticktock stream deployed">
+</div>
+</div>
+<div class="paragraph">
+<p>You can also verify the deployed apps using the <code>oc tool</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc get pods
+NAME                     READY     STATUS      RESTARTS   AGE
+...
+ticktock-log-0-2-it3ja   1/1       Running     0          7m
+ticktock-time-2-sxqnp    1/1       Running     0          6m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To verify that the stream is working as expected, tail the logs of the <code>ticktock-log</code> app either using the OpenShift Console:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-stream-logs.png" alt="ticktock-log logs">
+</div>
+</div>
+<div class="paragraph">
+<p>or the <code>oc</code> tool:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc logs -f ticktock-log
+...
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:49:59
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:01
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:02
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:03
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:04
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:05
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 14:50:06
+...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registering_stream_applications_with_maven_resource">8.7. Registering Stream applications with Maven resource</h3>
+<div class="paragraph">
+<p>The distinguishing feature of the Data Flow Server for OpenShift is that it has the capability to deploy applications registered with the Maven resource type
+in addition to the Docker resource type. Using the <code>ticktock</code> stream example above, we will create a similar stream definition
+but using the Maven resource versions of the apps.</p>
+</div>
+<div class="paragraph">
+<p>For this example we will register the apps individually using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:>app register --type source --name time-mvn --uri maven://org.springframework.cloud.stream.app:time-source-kafka:1.2.0.RELEASE
+Successfully registered application 'source:time-mvn'
+dataflow:>app register --type sink --name log-mvn --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.2.0.RELEASE
+Successfully registered application 'sink:log-mvn'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We couldn&#8217;t bulk import the Maven version of the apps as we did for the Docker versions because the app names
+would conflict, as the names defined in the bulk import files are the same across resource types. Hence we register the
+Maven apps with a <code>-mvn</code> suffix.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploy_a_simple_stream_in_the_shell_2">8.8. Deploy a simple stream in the shell</h3>
+<div class="paragraph">
+<p>Create a simple <code>ticktock-mvn</code> stream definition and deploy it immediately using the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name ticktock-mvn --definition "time-mvn | log-mvn" --deploy
+Created new stream 'ticktock-mvn'
+Deployment request has been sent</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There could be a slight delay once the above command is issued. This is due to the Maven artifacts being
+resolved and cached locally. Depending on the size of the artifacts, this could take some time.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Watch the OpenShift Console as the two application resources are created. Notice this time, that instead of the Pods
+being started, that a <a href="https://docs.openshift.org/latest/dev_guide/builds.html">Build</a> has been started instead.
+The Build will execute and create a Docker image, using the default <a href="https://github.com/donovanmuller/spring-cloud-deployer-openshift/tree/v1.2.1.RELEASE/src/main/resources/"><code>Dockerfile</code></a>,
+containing the app. The resultant Docker image will be pushed to the internal OpenShift <a href="https://docs.openshift.org/latest/install_config/registry/index.html">registry</a>,
+where the deployment resource will be triggered when the image has been successfully pushed.
+The <a href="https://docs.openshift.org/latest/dev_guide/deployments/how_deployments_work.html">deployment</a> will then scale the app Pod up, starting the application.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-stream-mvn-deployed.png" alt="ticktock-maven stream deployed">
+</div>
+</div>
+<div class="paragraph">
+<p>To verify that the stream is working as expected, tail the logs of the <code>ticktock-log-mvn</code> app using the <code>oc</code> tool:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc get pods
+NAME                             READY     STATUS      RESTARTS   AGE
+...
+ticktock-mvn-log-mvn-0-1-agpl6   1/1       Running     0          4m
+ticktock-mvn-log-mvn-1-build     0/1       Completed   0          1h
+ticktock-mvn-time-mvn-1-12ikj    1/1       Running     0          1m
+ticktock-mvn-time-mvn-1-build    0/1       Completed   0          1h
+
+$ oc logs -f ticktock-mvn-log-mvn-0-1-agpl6
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:23
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:25
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:26
+...  INFO 1 --- [afka-listener-1] log-sink                                 : 11/29/16 18:34:27</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_deploying_tasks_on_openshift">9. Deploying Tasks on OpenShift</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Deploying Task applications using the Data Flow Server for OpenShift is a similar affair to deploying Stream apps.
+Therefore, for brevity, only the Maven resource version of the task will be shown as an example.</p>
+</div>
+<div class="sect2">
+<h3 id="_registering_task_application_with_maven_resource">9.1. Registering Task application with Maven resource</h3>
+<div class="paragraph">
+<p>This time we will bulk import the Task application, as we do not have any Docker resource versions imported which would cause conflicts in naming.
+Import all Maven task applications with the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app import --uri http://bit.ly/1-0-1-GA-task-applications-maven</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_launch_a_simple_task_in_the_shell">9.2. Launch a simple task in the shell</h3>
+<div class="paragraph">
+<p>Let’s create a simple task definition and launch it.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;task create task1 --definition "timestamp"
+dataflow:&gt;task launch task1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that when the task is launched, an OpenShift Build is started to build the relevant Docker image containing the task app.
+Once the Build has completed successfully, pushing the built image to the internal registry, a bare Pod is started, executing the task.</p>
+</div>
+<div class="paragraph">
+<p>Verify that the task executed successfully by executing these commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;task list
+╔═════════╤═══════════════╤═══════════╗
+║Task Name│Task Definition│Task Status║
+╠═════════╪═══════════════╪═══════════╣
+║task1    │timestamp      │complete   ║
+╚═════════╧═══════════════╧═══════════╝
+
+dataflow:&gt;task execution list
+╔═════════╤══╤═════════════════════════════╤═════════════════════════════╤═════════╗
+║Task Name│ID│         Start Time          │          End Time           │Exit Code║
+╠═════════╪══╪═════════════════════════════╪═════════════════════════════╪═════════╣
+║task1    │1 │Wed Nov 30 13:13:02 SAST 2016│Wed Nov 30 13:13:02 SAST 2016│0        ║
+╚═════════╧══╧═════════════════════════════╧═════════════════════════════╧═════════╝</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also view the task execution status by using the Data Flow Server UI.</p>
+</div>
+<div class="sect3">
+<h4 id="_cleanup_completed_tasks">9.2.1. Cleanup completed tasks</h4>
+<div class="paragraph">
+<p>If you want to delete the Build and Pod created by this task execution, execute the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;task destroy --name task1</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<h1 id="configuration" class="sect0">Configuration</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>As the OpenShift Server is based on the Kubernetes Server, all the configuration is mostly identical.
+Please see the Kubernetes Server <a href="http://docs.spring.io/spring-cloud-dataflow-server-kubernetes/docs/1.2.3.RELEASE/reference/html/configuration.html">reference guide</a>
+for configuration options.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_maven_configuration">10. Maven Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Maven configuration is important for resolving Maven app artifacts.
+The following example taken from the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.2.1.RELEASE/src/etc/openshift/scdf-template.yaml">Data Flow Server only</a> template,
+configures a remote Maven repository:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>maven:
+  resolvePom: true
+  remote-repositories.spring:
+    url: http://repo.spring.io/libs-snapshot
+    auth:
+      username:
+      password:</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Where the <code>resolvePom</code> is important for determining the build strategy used.
+See the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.2.1.RELEASE/src/etc/openshift/">OpenShift templates</a> for reference.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+More configuration options can be seen in the <a href="http://docs.spring.io/spring-cloud-dataflow/docs/1.1.0.RELEASE/reference/html/_configure_maven_properties.html#_configure_maven_properties">Configure Maven Properties</a>
+section in the Data Flow reference documentation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dockerfile_resolution_strategies">11. Dockerfile Resolution Strategies</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Data Flow Server for OpenShift uses the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#docker-strategy-options">Docker build strategy</a>.
+The default strategy for resolving a Dockerfile is to use the built in Dockerfile included in the OpenShift deployer.
+However, there are three other strategies available:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If a remote Git URI is specified when creating the stream/task definition using the <code>spring.cloud.deployer.openshift.build.git.uri</code> property, this repository will be used and takes highest precedence.</p>
+</li>
+<li>
+<p>If <code>src/main/docker/Dockerfile</code> is detected in the Maven artifact Jar, then it is assumed that the <code>Dockerfile</code> will exist in that location in a remote Git repository.
+In that case, the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#source-code">Git repository source</a> is used in conjunction with the Docker build strategy.
+The remote Git URI and ref are extracted from the <code>&lt;scm&gt;&lt;connection&gt;&lt;/connection&gt;&lt;/scm&gt;</code> and <code>&lt;scm&gt;&lt;tag&gt;&lt;/tag&gt;&lt;/scm&gt;</code> tags in the <code>pom.xml</code> (if available) of the Maven Jar artifact.
+For example, if the <code>&lt;scm&gt;&lt;connection&gt;</code> value was <code>scm:git:git@github.com:spring-cloud/spring-cloud-dataflow.git</code>,
+then the remote Git URI would be parsed as <code>ssh://git@github.com:spring-cloud/spring-cloud-dataflow.git</code>.
+In short, the <code>Dockerfile</code> from the remote Git repository for the app being deployed will be
+used (OpenShift actually clones the Git repo) as the source for the image build.
+Of course, you can include and customise whatever and however you like in this <code>Dockerfile</code>.</p>
+</li>
+<li>
+<p>The other strategy uses the contents of a <code>Dockerfile</code> located in one of three locations as the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#dockerfile-source">Dockerfile source</a>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>The file system location of a Dockerfile indicated by the <code>spring.cloud.deployer.openshift.deployment.dockerfile</code> deployment property.
+E.g. <code>--properties "spring.cloud.deployer.openshift.deployment.dockerfile=/tmp/deployer/Dockerfile"</code>. The <strong>contents</strong> of this file will be used as the source input for the build.</p>
+</li>
+<li>
+<p>The inline Dockerfile content as provided in the <code>spring.cloud.deployer.openshift.deployment.dockerfile</code> deployment property.
+E.g. <code>--properties "spring.cloud.deployer.openshift.deployment.dockerfile=FROM java:8\n RUN wget &#8230;&#8203;"</code></p>
+</li>
+<li>
+<p>The default Dockerfile provided by the OpenShift deployer.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<h1 id="server" class="sect0">Server Implementation</h1>
+<div class="sect1">
+<h2 id="_server_properties">12. Server Properties</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Spring Data Flow Server for OpenShift is a specialisation of the Spring Cloud Data Flow Server for Kubernetes.
+Therefore, all properties supported by the Kubernetes Server are supported by the OpenShift server.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The <code>spring.cloud.deployer.kubernetes</code> prefix should be replaced with <code>spring.cloud.deployer.openshift</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>See <a href="http://docs.spring.io/spring-cloud-dataflow-server-kubernetes/docs/1.2.3.RELEASE/reference/html/">Data Flow Server for Kubernetes</a> reference documentation for supported properties.</p>
+</div>
+<div class="sect2">
+<h3 id="_openshift_specific_properties">12.1. OpenShift Specific Properties</h3>
+<div class="paragraph">
+<p>The following properties are specific to the Data Flow OpenShift Server.</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Usage Example</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Force Build</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.openshift.forceBuild=true</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ignore the build hashing feature when deploying streams and always trigger a new build for Maven based apps</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default Routing Subdomain</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.openshift.defaultRoutingSubdomain=oscp.mydomain.com</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide the <a href="https://docs.openshift.org/latest/install_config/router/default_haproxy_router.html#customizing-the-default-routing-subdomain">routing subdomain</a> used when building Route URL&#8217;s.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default Image Tag</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.cloud.deployer.openshift.defaultImageTag=latest</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The default Docker image tag to be used when creating Build and DeploymentConfig resources</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<h1 id="application" class="sect0">Application Properties</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The following application properties are supported by the Data Flow Server for OpenShift.
+These properties are passed as application properties when defining streams or tasks.
+Below is an example of defining a stream:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name test --definition "time | custom --spring.cloud.deployer.openshift.build.git.uri=https://github.com/donovanmuller/timely-application-group.git | log"
+Created new stream 'test'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note the application property <code>spring.cloud.deployer.openshift.build.git.uri=https://github.com/donovanmuller/timely-application-group.git</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_application_properties">13. Supported Application Properties</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Usage Example</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Build Git URI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.build.git.uri=https://github.com/donovanmuller/timely-application-group.git</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Git remote repository URI that will contain a Dockerfile in <code>src/main/docker</code> of that repository. See <a href="https://docs.openshift.org/latest/dev_guide/builds.html#source-code">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Git Branch Reference</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.build.git.ref=master</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Git branch/reference for the repository specified by <code>spring.cloud.deployer.openshift.build.git.uri</code>. See <a href="https://docs.openshift.org/latest/dev_guide/builds.html#source-code">here</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dockerfile Path</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.build.git.dockerfile=src/main/docker</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The location, relative to the project root of the Git repository, where the Dockerfile is located.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Git Repository Secret</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.build.git.secret=github-secret</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If the remote Git repository requires authentication, use this secret. See <a href="https://docs.openshift.org/latest/dev_guide/builds.html#using-secrets">here</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h1 id="deployment" class="sect0">Deployment Properties</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>The following deployment properties are supported by the Data Flow Server for OpenShift.
+These properties are passed as deployment properties when deploying streams or tasks.
+Below is an example of deploying a stream definition:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name test --definition "time | custom | log"
+Created new stream 'test'
+
+dataflow:&gt;stream deploy test --properties "app.custom.spring.cloud.deployer.openshift.defaultDockerfile=Dockerfile.nexus"
+Deployment request has been sent for stream 'test'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note the deployment property <code>app.custom.spring.cloud.deployer.openshift.defaultDockerfile=Dockerfile.nexus</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_deployment_properties">14. Supported Deployment Properties</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Usage Example</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Force Build</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.forceBuild=true</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A flag (true/false) indicating whether to ignore the build hashing feature when deploying streams and always trigger a new build for Maven based apps</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Servie Account</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.service.account=scdf</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenShift <a href="https://docs.openshift.org/latest/dev_guide/service_accounts.html">ServiceAccount</a> that containers should run under</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Image Tag</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.image.tag=latest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Docker image tag for the <a href="https://docs.openshift.org/latest/architecture/core_concepts/builds_and_image_streams.html#image-streams">Image Stream</a> used when creating the <a href="https://docs.openshift.org/latest/dev_guide/deployments/how_deployments_work.html">Deployment</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inline Dockerfile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.dockerfile='FROM java:8\nRUN echo "Custom Dockerfile&#8230;&#8203;"'</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An inline <a href="https://docs.docker.com/engine/reference/builder/">Dockerfile</a> that will be used to build the Docker image. Only applicable to Maven resource apps</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node Selector</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.nodeSelector=region: primary,role: streams</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of node selectors (in the form name: value) which will determine where the app&#8217;s Pod&#8217;s <a href="https://docs.openshift.org/latest/dev_guide/deployments/basic_deployment_operations.html#assigning-pods-to-specific-nodes">get assigned</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default Provided Dockerfile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.defaultDockerfile=Dockerfile.nexus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specify which default Dockerfile to use when building Docker images. There are currently two supported default Dockerfiles</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create Route</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.createRoute=true</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A flag (true/false) indicating whether a <a href="https://docs.openshift.org/latest/dev_guide/routes.html">Route</a> should be created for the app. Analogous to spring.cloud.deployer.kubernetes.createLoadBalancer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Route Host Name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.route.host=myapp.mycompany.com</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provide a <a href="https://docs.openshift.org/latest/dev_guide/routes.html">Route</a> Host value that will the created Route will expose as the URL to the app</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Volume Mounts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.volumeMounts=[{name: 'testhostpath', mountPath: '/test/hostPath'}, {name: 'testpvc', mountPath: '/test/pvc'}, {name: 'testnfs', mountPath: '/test/nfs'}]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A list of <a href="https://github.com/fabric8io/kubernetes-model">kubernetes-model</a> supported volume mounts. Specified as a JSON representation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Volumes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.volumes=[{name: testhostpath, hostPath: { path: '/test/override/hostPath' }}, {name: 'testpvc', persistentVolumeClaim: { claimName: 'testClaim', readOnly: 'true' }}, {name: 'testnfs', nfs: { server: '10.0.0.1:111', path: '/test/nfs' }}]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A list of <a href="https://github.com/fabric8io/kubernetes-model">kubernetes-model</a> supported volumes. Specified as a JSON representation. Volumes must have corresponding volume mounts, otherwise they will be ignored</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Labels</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.deployment.labels=project=test,team=a-team</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A comma separated list of labels (in the form name=value) that will be added to the app</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create Node Port</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spring.cloud.deployer.openshift.createNodePort=true</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create a NodePort instead of a Route. Either "true" or a number at deployment time. The value "true" will choose a random port. If a number is given it must be in the range that is configured for the cluster (service-node-port-range, default is 30000-32767)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h1 id="howto" class="sect0">&#8216;How-to&#8217; guides</h1>
+<div class="openblock partintro">
+<div class="content">
+<div class="paragraph">
+<p>This section provides answers to some common &#8216;how do I do that&#8230;&#8203;&#8217; type of questions
+that often arise when using Spring Cloud Data Flow.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_deploying_custom_stream_app_as_a_maven_resource">15. Deploying Custom Stream App as a Maven Resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section walks you through deploying a simple Spring Cloud Stream based application, packaged as a Maven artifact, to OpenShift.
+The source code for this app is available in the following <a href="https://github.com/donovanmuller/timezone-processor-kafka">GitHub repository</a>.</p>
+</div>
+<div class="paragraph">
+<p>This guide assumes that you have gone through the <a href="#getting-started">Getting Started</a> section and are using a local minishift
+instance of OpenShift. Adjust the steps accordingly if you are using an existing OpenShift cluster.</p>
+</div>
+<div class="sect2">
+<h3 id="_deploy_a_nexus_repository">15.1. Deploy a Nexus Repository</h3>
+<div class="paragraph">
+<p>For OpenShift to build the Docker image that will be deployed, it must be able to resolve and download the custom app&#8217;s Jar artifact.
+This means that the custom app must be deployed to an accessible Maven repository.</p>
+</div>
+<div class="paragraph">
+<p>Assuming the local minishift OpenShift environment discussed in the <a href="#getting-started">Getting Started</a> section, we will deploy
+a Nexus container to which we can deploy our custom application. Deploying the Nexus image is trivial thanks to
+an OpenShift template <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/tree/v1.2.1.RELEASE/src/etc/openshift/nexus-template.yaml">available here</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Make sure you have configured the <code>scdf</code> Service Account mentioned in the <a href="#getting-started">Getting Started</a> section, as this account is
+used by the Nexus deployment.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Using the <code>oc</code> tool, upload the Nexus template with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc create -f https://raw.githubusercontent.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.2.1.RELEASE/src/etc/openshift/nexus-template.yaml
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once uploaded, open the OpenShift Console (you can use <code>minishift console</code>), authenticate and navigate to the <code>scdf</code> project.
+Then click <em>Add to Project</em> and select the <code>nexus</code> template:</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-nexus-template.png" alt="Data Flow Server template">
+</div>
+</div>
+<div class="paragraph">
+<p>The default configurations should be sane. However, you must provide the <strong>The OpenShift Route host value</strong>.
+This value will depend on your minishift and OpenShift Router environment but should be similar to
+<code>nexus-scdf.192.168.64.15.xip.io</code>. Where <code>-scdf.192.168.64.15.xip.io</code> is the project name (<code>scdf</code>) and
+the default routing subdomain (<code>192.168.64.15.xip.io</code>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-nexus-route.png" alt="Data Flow Server route configuration">
+</div>
+</div>
+<div class="paragraph">
+<p>Click <em>Create</em> when you&#8217;re happy with the configuration.
+Wait for the Nexus image to be pulled and the deployment to be successful. Once the Pod has been scaled successfully
+you should be able to access the Nexus UI by clicking on the Route URL (<a href="http://nexus-scdf.192.168.64.15.xip.io" class="bare">nexus-scdf.192.168.64.15.xip.io</a> in this example).</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The default credential for Nexus is <code>admin</code>/<code>admin123</code> or <code>deployment</code>/<code>deployment123</code>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_the_data_flow_server_for_openshift">15.2. Configuring the Data Flow Server for OpenShift</h3>
+<div class="paragraph">
+<p>We need to configure the Data Flow Server to use this new Nexus instance as a remote Maven repository.
+If you have an existing deployment from the <a href="#getting-started">Getting Started</a> section you will have to change it&#8217;s configuration.</p>
+</div>
+<div class="paragraph">
+<p>There are a few ways to do that but the way described here is to remove the existing deployment and use the
+existing <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/v1.2.1.RELEASE/src/etc/openshift/scdf-ephemeral-datasources-kafka-template.yaml">Data Flow Server with ephemeral Datasources and Kafka binder</a> template
+to deploy the updated configuration.</p>
+</div>
+<div class="paragraph">
+<p>Remove the current environment using the <code>oc</code> tool (assuming you used the Kafka template):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ oc delete all --selector=template=scdf-kafka
+$ oc delete cm --selector=template=scdf-kafka
+$ oc delete secret --selector=template=scdf-kafka</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Next click <em>Add to Project</em> and select the <code>spring-cloud-dataflow-server-openshift-ephemeral-kafka</code> template.
+Use the following values for the Maven configuration items:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Configuration Parameter</th>
+<th class="tableblock halign-left valign-top">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remote Maven repository name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">nexus</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remote Maven repository URL</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://nexus-scdf.192.168.64.15.xip.io/content/groups/public" class="bare">nexus-scdf.192.168.64.15.xip.io/content/groups/public</a> (use your Route URL for Nexus here)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remote Maven repository username</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">deployment</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Remote Maven repository password</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">deployment123</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-maven.png" alt="Data Flow Server Maven configuration">
+</div>
+</div>
+<div class="paragraph">
+<p>Click <em>Create</em> and wait for the deployment to complete successfully.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cloning_and_deploying_the_app">15.3. Cloning and Deploying the App</h3>
+<div class="paragraph">
+<p>Next step is to deploy our custom app into the Nexus instance.
+First though, we need to clone the custom app source.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ git clone https://github.com/donovanmuller/timezone-processor-kafka.git
+$ cd timezone-processor-kafka</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Next we deploy the application into our Nexus repository with</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ ./mvnw -s .settings.xml deploy -Dnexus.url=http://nexus-scdf.192.168.64.15.xip.io/content/repositories/snapshots
+...
+Uploading: http://nexus-scdf.192.168.64.15.xip.io/content/repositories/snapshots/io/switchbit/timezone-processor-kafka/maven-metadata.xml
+Uploaded: http://nexus-scdf.192.168.64.15.xip.io/content/repositories/snapshots/io/switchbit/timezone-processor-kafka/maven-metadata.xml (294 B at 6.0 KB/sec)
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 13.156 s
+[INFO] Finished at: 2016-11-30T20:42:54+02:00
+[INFO] Final Memory: 35M/302M
+[INFO] ------------------------------------------------------------------------</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Substitute the value for <code>-Dnexus.url</code> with the URL matching your Nexus instance.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deploying_the_stream">15.4. Deploying the Stream</h3>
+<div class="paragraph">
+<p>Now that our custom app is ready, let&#8217;s register it with the Data Flow Server.
+Using the Data Flow Shell, targeted to our OpenShift deployed instance, register the <code>timezone</code> app with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app register --name timezone --type processor --uri maven://io.switchbit:timezone-processor-kafka:1.0-SNAPSHOT
+Successfully registered application 'processor:timezone'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The assumption is that the out-of-the-box apps have been imported previously as part of the <a href="#getting-started">Getting Started</a> section.
+If the apps are not imported, import them now with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;app import --uri http://bit.ly/stream-applications-kafka-docker</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It does not really matter whether the Docker or Maven out-of-the-box apps are registered.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now we can define a stream using our timezone processor with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream create --name timezoney --definition "time | timezone | log"
+Created new stream 'timezoney'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and deploy it with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream deploy timezoney --properties "app.timezone.timezone=Africa/Johannesburg,app.timezone.spring.cloud.deployer.openshift.defaultDockerfile=Dockerfile.nexus"
+Deployment request has been sent for stream 'timezoney'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We provide two deployment properties to the <code>timezone</code> app. The first is the required timezone to convert the input times.
+The second is to inform the Data Flow Server that it should use the provided default Dockerfile (<code>Dockerfile.nexus</code>) that supports Nexus repositories,
+instead of the default <code>Docker.artifactory</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You should see a build being triggered for the <code>timezone</code> app, which will download the <code>timezone-processor-kafka</code>
+Maven artifact from the Nexus repository and build the Docker image. Once the build is successful, the app will be deployed
+alongside the other apps.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-custom-app-deployed.png" alt="timezoney stream deployed">
+</div>
+</div>
+<div class="paragraph">
+<p>View both the <code>timezoney-timezone-0</code> and <code>timezoney-log-0</code> apps for the expected log outputs.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-custom-app-timezone.png" alt="timezoney stream logs">
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/raw/master/spring-cloud-dataflow-server-openshift-docs/src/main/asciidoc/images/scdf-openshift-custom-app-log.png" alt="timezoney stream logs">
+</div>
+</div>
+<div class="paragraph">
+<p>Once you&#8217;re done, destroy the stream with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">dataflow:&gt;stream destroy timezoney
+Destroyed stream 'timezoney'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2017-11-07 22:03:59 UTC
+</div>
+</div>
+</body>
+</html>
