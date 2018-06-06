@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Spring Cloud Skipper as a Service Broker &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>Spring Cloud Skipper as a Service Broker</h1>
+  <span class="post-date">Fri, Dec 22, 2017</span>
+  
+
+<p>Kubernetes recently added support for the Open Service Broker API. Spring Cloud Skipper, an equally new project, provides a Continuous Delivery platform to deploy Spring Boot based applications to cloud platforms. Eager to play around with both, I combine both topics in the ubiquitous &ldquo;hello world&rdquo; demonstration with OpenShift.</p>
+
+<h2 id="open-service-broker-api">Open Service Broker API</h2>
+
+<p>The Open Service Broker API initiative was <a href="https://www.openservicebrokerapi.org/blog/2016/12/13/open-service-broker-api-launches-as-industry-standard">announced</a> late in 2016 and established a working group to foster an industry standard for provisioing and wiring services into modern cloud native platforms.</p>
+
+<p>So what exactly is the Cloud Foundry Service Broker API? An article from The New Stack entitled <a href="https://thenewstack.io/cloud-foundrys-service-broker-api-role-in-kubernetes-and-open-source-platforms/">&ldquo;Cloud Foundry’s Service Broker API Role in Kubernetes and Open Source Platforms&rdquo;</a> puts it quite succinctly.</p>
+
+<blockquote>
+<p><em>Think of it as a clean abstraction that allows “services” to expose a catalog of capabilities, as well as the ability to create, use and delete those services&hellip;</em> - The New Stack: Cloud Foundry’s Service Broker API Role in Kubernetes and Open Source Platforms</p>
+</blockquote>
+
+<p>Traditionally a feature in <a href="https://www.cloudfoundry.org/why-cloud-foundry-is-making-the-open-service-broker-api-even-more-open-2/">Cloud Foundry</a> it is now available in Kubernetes and OpenShift. I won&rsquo;t go into too much detail around the Open Service Broker API but the <a href="https://github.com/openservicebrokerapi/servicebroker">GitHub repository</a> has a wealth of information, including the actual specification.</p>
+
+<p>This post will focus on the OpenShift implementation of the Open Service API.</p>
+
+<h3 id="openshift">OpenShift</h3>
+
+<p>OpenShift introduced support for the <a href="https://docs.openshift.org/latest/architecture/service_catalog/index.html">Service Catalog</a> work done in the upstream Kubernetes project through a new catalog interface in the OpenShift Web Console.</p>
+
+<p>This &ldquo;app store&rdquo; like catalog, exposes the Services offered by the configured Service Brokers. Let&rsquo;s see this in action by running a local instance of OpenShift 3.7 using the <code>minishift</code> CLI tool.</p>
+
+<p>First, <a href="https://docs.openshift.org/latest/minishift/getting-started/installing.html">install <code>minishift</code></a> for your platform (I&rsquo;m using the macOS install for the rest of this post). Once installed we need to:</p>
+
+<ul>
+<li>enable the <code>admin-user</code> and <code>anyuid</code> <a href="https://docs.openshift.org/latest/minishift/using/addons.html">addons</a> (to assign <code>cluster-admin</code> role to the <code>admin</code> user and allow Pods to run as the root user)</li>
+<li>enable the <a href="https://docs.openshift.org/latest/minishift/using/experimental-features.html">experimental features</a> (to allow the option to install the <code>service-catalog</code>)</li>
+<li>and then finally start an OpenShift Origin 3.7 instance with:</li>
+</ul>
+
+<pre><code class="language-console">$ minishift --profile skipper addons enable admin-user
+$ minishift --profile skipper addons enable anyuid
+$ minishift --profile skipper addons list
+- admin-user     : enabled    P(0)
+- anyuid         : enabled    P(0)
+- registry-route : disabled   P(0)
+- xpaas          : disabled   P(0)
+
+$ export MINISHIFT_ENABLE_EXPERIMENTAL=y
+$ minishift start --profile skipper --service-catalog --openshift-version=v3.7.0 --cpus=4 --memory=4096
+...
+Image pull complete
+OpenShift server started.
+
+The server is accessible via web console at:
+    https://192.168.64.49:8443
+
+You are logged in as:
+    User:     developer
+    Password: &lt;any value&gt;
+
+To login as administrator:
+    oc login -u system:admin
+
+-- Waiting for persistent volumes to be created ... OK
+
+-- Applying addon 'admin-user':..
+
+-- Applying addon 'anyuid':.
+ Add-on 'anyuid' changed the default security context constraints to allow pods to run as any user.
+ Per default OpenShift runs containers using an arbitrarily assigned user ID.
+ Refer to https://docs.openshift.org/latest/architecture/additional_concepts/authorization.html#security-context-constraints and
+ https://docs.openshift.org/latest/creating_images/guidelines.html#openshift-origin-specific-guidelines for more information.
+$
+</code></pre>
+
+<p>Once the install has completed, open the console and login as the <code>admin</code> user with <code>admin</code>/<code>admin</code>. You should be presented with the Catalog.</p>
+
+<p><img src="minishift-openshift.png" alt="minishift-openshift" /></p>
+
+<p>Where did all these items, like MariaDB, MongoDb, etc., come from? As mentioned the Catalog provides an interface that exposes the Services available from the configured Service Brokers. So it goes to reason that these items (or Services) are coming from some Service Broker(s) right? Correct. There is a default <a href="https://docs.openshift.org/latest/architecture/service_catalog/template_service_broker.html#arch-template-service-broker">Template Service Broker</a> that exposes the bundled OpenShift <a href="https://docs.openshift.org/latest/dev_guide/templates.html#dev-guide-templates">Templates</a> as Services.</p>
+
+<p>You can use the <code>oc</code> CLI tool to get all Service Brokers:</p>
+
+<pre><code class="language-console"># In the Web Console, go to Help &gt; Command Line Tools and copy the 'oc login ...' value
+$ oc login ...
+$ oc get clusterservicebrokers
+NAME                      KIND
+template-service-broker   ClusterServiceBroker.v1beta1.servicecatalog.k8s.io
+</code></pre>
+
+<p>Note the <code>template-service-broker</code> as described above, as well as the fact that Service Broker resources in OpenShift/Kubernetes are called <code>clusterservicebrokers</code>.</p>
+
+<blockquote>
+<p>To prove that the items in the Catalog are Templates provided as Services made available by the Template Service Broker, you can delete the <code>template-service-broker</code> and see what happens:</p>
+
+<pre><code class="language-console">$ oc delete clusterservicebrokers/template-service-broker
+clusterservicebroker &quot;template-service-broker&quot; deleted
+</code></pre>
+
+<p>go back to the web console and note that most of the items in the Catalog have been removed.</p>
+</blockquote>
+
+<p>Going back to the web console Catalog, click some of the items and note the workflow of provisioning Services.</p>
+
+<h2 id="a-spring-experiment">A Spring Experiment</h2>
+
+<p>🤔  So&hellip; what would it look like if I wanted to create my own Service Broker? What if that Service Broker could provide a way to deploy uploaded Spring Boot apps to OpenShift, simply by navigating the Catalog?</p>
+
+<p>That sounds like a good excuse to learn more about the Open Service Broker API as well as play around with <a href="https://github.com/spring-cloud/spring-cloud-skipper">Spring Cloud Skipper</a>, a new project that is <em>&hellip; package manager that installs, upgrades, and rolls back applications on multiple Cloud Platforms.</em></p>
+
+<p>Our experiment will conceptually work like this:</p>
+
+<ol>
+<li>We will retrofit a fork of Spring Cloud Skipper to act as a Service Broker that adheres to the Open Service Broker API (v2.13), which we will be deployed to the OpenShift instance we just started.</li>
+<li>We will take a demo application, zip it up into a Skipper package and upload it to our Skipper instance.</li>
+<li>Once uploaded, it will appear in the OpenShift web console Catalog where we can select and deploy the application.</li>
+</ol>
+
+<h2 id="skipper">Skipper</h2>
+
+<p>Spring Cloud Skipper is a new project born out of the Spring Cloud Data Flow project and inspired by <a href="https://github.com/kubernetes/helm">Helm</a>, the Kubernetes package manager. It aims to provide a Continuous Deployment friendly way of managing the deployment of Spring Boot applications. It incorprates features like versioned releases (with rollback) as well as various deployment strategies. I like to think of Skipper as <code>yum</code>, <code>apt-get</code> or <code>brew</code> for Spring Boot applications.</p>
+
+<blockquote>
+<p>For more information please refer to the <a href="https://docs.spring.io/spring-cloud-skipper/docs/1.0.0.M3/reference/htmlsingle/">reference documentation</a> as well as <a href="https://www.youtube.com/watch?v=X0EiedwdK7c">this session on YouTube</a> from SpringOne Platform 2017.</p>
+</blockquote>
+
+<p>For our experiment, we&rsquo;ll use Skipper to deploy our demo application to OpenShift. Skipper makes this easy because we don&rsquo;t have to worry about the details around taking a Spring Boot application and running it in OpenShift. Thanks to the <a href="https://github.com/spring-cloud/spring-cloud-deployer">Spring Cloud Deployer</a> abstraction used by Skipper, the deployment details can be handled by the <a href="https://github.com/donovanmuller/spring-cloud-deployer-openshift">Spring Cloud Deployer for OpenShift</a>.</p>
+
+<p>Our experiment calls for exposing Spring Boot applications uploaded to Skipper as an item presented on the OpenShift web console&rsquo;s Catalog. So what we need to do is expose our Skipper server using the Service Broker API, in the same way that the Template Service Broker exposed Templates as Services, we can expose Spring Boot applications as Services. Thankfully this is made quite simple thanks to yet another Spring Cloud project, namely the tongue twisting <a href="https://github.com/spring-cloud/spring-cloud-cloudfoundry-service-broker">Spring Cloud - Cloud Foundry Service Broker</a> project. Basically by adding this project as a dependency to a Spring Boot application, it auto configures <code>@RestController</code>&rsquo;s that adhere to the OSB (Open Service Broker) API specification and allows you to wire up beans that allow you to hook into the OSB lifecycle.</p>
+
+<p>I&rsquo;ve already done the work of integrating the deployment functionality of Skipper into the OSB lifecycle in the fork below. Go ahead and clone <a href="https://github.com/donovanmuller/spring-cloud-skipper/tree/service-broker">my fork</a> and checkout the <code>service-broker</code> branch and have a look around. Look at <a href="https://github.com/donovanmuller/spring-cloud-skipper/commit/797373ee33ea7f949a9decf972a777ce79984268">this commit</a> for the Service Broker specific changes.</p>
+
+<pre><code class="language-console">$ git clone https://github.com/donovanmuller/spring-cloud-skipper.git $ cd spring-cloud-skipper
+spring-cloud-skipper $ git checkout service-broker
+spring-cloud-skipper $
+</code></pre>
+
+<p>The interesting bits are in [<code>ServiceBrokerCatalogConfiguration</code>]() where the <code>CatalogService</code> bean is responsible for populating the <code>Catalog</code> with <code>ServiceDefinition</code>&rsquo;s. A <code>ServiceDefinition</code> represents a registered Skipper package (application) in this context, as well as all the metadata describing the application. This metadata allows the web console Catalog to render an item and associated wizard for provisioning a Service Instance. In addition the <a href="https://github.com/donovanmuller/spring-cloud-skipper/commit/797373ee33ea7f949a9decf972a777ce79984268#diff-58569827dad715b4958e0f706622590c"><code>ServiceBrokerInstanceService</code></a> bean is wired in, which implements four lifecycle methods related to the OSB API:</p>
+
+<pre><code class="language-java">/**
+ * Create (provision) a new service instance.
+ */
+CreateServiceInstanceResponse createServiceInstance(CreateServiceInstanceRequest request);
+
+/**
+ * Get the status of the last requested operation for a service instance.
+ */
+GetLastServiceOperationResponse getLastOperation(GetLastServiceOperationRequest request);
+
+/**
+ * Delete (deprovision) a service instance.
+ */
+DeleteServiceInstanceResponse deleteServiceInstance(DeleteServiceInstanceRequest request);
+    
+/**
+ * Update a service instance. Only modification of the service plan is supported.
+ */
+UpdateServiceInstanceResponse updateServiceInstance(UpdateServiceInstanceRequest request);
+</code></pre>
+
+<p>In our experiment, only the <code>createServiceInstance</code>, <code>getLastOperation</code> and <code>deleteServiceInstance</code> are supported.</p>
+
+<h4 id="skipper-fork">Skipper fork</h4>
+
+<p>Since all the Service Broker related development is done on <code>master</code> branch of Skipper and related projects, clone <a href="https://github.com/donovanmuller/spring-cloud-skipper.git">my Skipper fork</a> and run the <code>spring-cloud-skipper-server/src/etc/openshift/install-snapshots.sh</code> script to install all the necessary artifacts to your local Maven repository:</p>
+
+<pre><code class="language-console">$ git clone https://github.com/donovanmuller/spring-cloud-skipper.git
+$ cd spring-cloud-skipper
+spring-cloud-skipper $ git checkout service-broker
+spring-cloud-skipper $ ./spring-cloud-skipper-server/src/etc/openshift/install-snapshots.sh
+...
+spring-cloud-skipper $
+</code></pre>
+
+<p>Besides cloning and building all necessary dependent projects, it will also build and push a Skipper server Docker image to the minishift Docker daemon. Expect this whole process to take a bit of time depending on your network speed etc. 😴</p>
+
+<h3 id="deploying-skipper-to-openshift">Deploying Skipper to OpenShift</h3>
+
+<p>Once that&rsquo;s all built and pushed, let&rsquo;s deploy our retrofitted Skipper server to our local OpenShift instance. This is trivial thanks to the <code>spring-cloud-skipper-server/src/etc/openshift/deploy-skipper.sh</code> script. Assuming you&rsquo;ve already authenticated to your local OpenShift instance, run the script with:</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ ./spring-cloud-skipper-server/src/etc/openshift/deploy-skipper.sh
+Already on project &quot;skipper&quot; on server &quot;https://192.168.64.55:8443&quot;.
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app centos/ruby-22-centos7~https://github.com/openshift/ruby-ex.git
+
+to build a new example application in Ruby.
+route &quot;nexus&quot; created
+serviceaccount &quot;skipper&quot; created
+deploymentconfig &quot;nexus&quot; created
+service &quot;nexus&quot; created
+configmap &quot;skipper-config&quot; created
+deploymentconfig &quot;skipper&quot; created
+service &quot;skipper&quot; created
+route &quot;skipper&quot; created
+role &quot;edit&quot; added: &quot;system:serviceaccount:skipper:skipper&quot;
+spring-cloud-skipper $
+</code></pre>
+
+<p>This script executes the following:</p>
+
+<ol>
+<li>Creates a <code>skipper</code> project</li>
+<li>Processes and creates the resources from the <code>spring-cloud-skipper-server/src/etc/openshift/skipper-osb-nexus-template.yml</code> OpenShift Template, which includes:
+
+<ul>
+<li>Nexus instance so we can push our application artifacts for Skipper to resolve</li>
+<li>Our Skipper instance with OSB API support</li>
+</ul></li>
+<li>Assigns the <code>skipper</code> Service Account the correct permissions to enable the Skipper server to interact with the OpenShift API&rsquo;s to manage applications</li>
+</ol>
+
+<p>Once the script has been executed, you should see both successful deployments (you may have to wait a while, depending on your network speed, for the images to pull):</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ oc project skipper
+Now using project &quot;skipper&quot; on server https://192.168.64.55:8443&quot;.
+spring-cloud-skipper $ oc get dc
+NAME      REVISION   DESIRED   CURRENT   TRIGGERED BY
+nexus     1          1         1         config
+skipper   1          1         1         config
+spring-cloud-skipper $
+</code></pre>
+
+<p>You should also be able to access Nexus via the created Route:</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ nexus_route_host=$(oc get route nexus --template={{.spec.host}} -n skipper)
+spring-cloud-skipper $ curl -I ${nexus_route_host}
+HTTP/1.1 200 OK
+Server: Nexus/2.14.5-02
+...
+spring-cloud-skipper $
+</code></pre>
+
+<h3 id="a-new-service-broker-is-born">A new Service Broker is born</h3>
+
+<p>Great, now that we&rsquo;re all set up, let&rsquo;s inform OpenShift that there&rsquo;s a new Service Broker that can&rsquo;t wait to provide some services. We do this by creating a <code>ClusterServiceBroker</code> resource . Let&rsquo;s have a look at that resource by looking at the <code>spring-cloud-skipper-server/src/etc/openshift/skipper-servicebroker.yml</code> file:</p>
+
+<pre><code class="language-yaml">apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceBroker
+metadata:
+  name: skipper-service-broker
+spec:
+  url: http://skipper.skipper.svc:7577
+  relistBehavior: Duration
+  relistDuration: 1s
+</code></pre>
+
+<p>Simple enough. Amongst other things, it has a <code>name</code> and a <code>url</code>, which points to the Service address of our running Skipper server. This is the most basic definition and I have purposely left out security and other properties for the purpose of this demo. See the <a href="https://github.com/openshift/origin/blob/master/cmd/service-catalog/go/src/github.com/kubernetes-incubator/service-catalog/docs/walkthrough.md#step-2---creating-a-clusterservicebroker-resource">Service Catalog Demonstration Walkthrough</a> for a meatier example.</p>
+
+<p>Now create this resource by running the following:</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ oc create -f spring-cloud-skipper-server/src/etc/openshift/skipper-servicebroker.yml
+clusterservicebroker &quot;skipper-service-broker&quot; created
+spring-cloud-skipper $ 
+</code></pre>
+
+<p>Once this resource is created, OpenShift&rsquo;s Service Catalog will execute a <code>GET /v2/catalog</code> on our Skipper server and will return nothing at this point because we haven&rsquo;t uploaded any packages. You can test this yourself by <code>curl</code>&lsquo;ing this for yourself:</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ skipper_route_host=$(oc get route skipper --template={{.spec.host}} -n skipper)
+spring-cloud-skipper $ curl -s ${skipper_route_host}/v2/catalog | jq .
+{
+  &quot;services&quot;: []
+}
+</code></pre>
+
+<p>The OSB API is actually quite simple. You can view the different workflows by viewing this diagram: <a href="https://github.com/openservicebrokerapi/servicebroker/blob/master/diagram.md">https://github.com/openservicebrokerapi/servicebroker/blob/master/diagram.md</a></p>
+
+<p>Just to make sure everything is 100% before moving on, let&rsquo;s see what OpenShift says about our Service Broker:</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ oc get clusterservicebroker/skipper-service-broker -o yaml
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceBroker
+metadata:
+  creationTimestamp: 2017-12-20T20:15:55Z
+  finalizers:
+  - kubernetes-incubator/service-catalog
+  generation: 1
+  name: skipper-service-broker
+  resourceVersion: &quot;207&quot;
+  selfLink: /apis/servicecatalog.k8s.io/v1beta1/clusterservicebrokers/skipper-service-broker
+  uid: 956527f5-e5c2-11e7-902d-0242ac110003
+spec:
+  relistBehavior: Duration
+  relistDuration: 1s
+  relistRequests: 0
+  url: http://skipper.skipper.svc:7577
+status:
+  conditions:
+  - lastTransitionTime: 2017-12-20T20:15:55Z
+    message: Error syncing catalog from ServiceBroker. Error getting catalog payload
+      for broker &quot;skipper-service-broker&quot;; received zero services; at least one service
+      is required
+    reason: ErrorSyncingCatalog
+    status: &quot;False&quot;
+    type: Ready
+  reconciledGeneration: 0
+spring-cloud-skipper $
+</code></pre>
+
+<p>Note the &ldquo;error&rdquo;, <code>Error getting catalog payload for broker skipper-service-broker&quot;; received zero services; at least one service is required</code>. As expected, we don&rsquo;t have any services&hellip;. yet.</p>
+
+<h2 id="hello-world">Hello World</h2>
+
+<p>I have put together a very simple &ldquo;Hello world&rdquo; application that we will package up and upload to Skipper, which in turn will be presented on the OpenShift web console&rsquo;s Catalog via the OSB API.</p>
+
+<p>Go ahead and clone this demo application:</p>
+
+<pre><code class="language-console">$ git clone https://github.com/donovanmuller/skipper-app.git
+$ cd skipper-app
+skipper-app $
+</code></pre>
+
+<p>As you can see this is a plain old Spring Boot 1.5.x web application. You can run the app with <code>./mvnw spring-boot:run</code> and navigate to <a href="http://localhost:8080">http://localhost:8080</a> to see it in action.</p>
+
+<h3 id="the-skipper-package">The Skipper package</h3>
+
+<p>For this application to be uploaded to Skipper and to be eligible for deployment, it must be represented by a Skipper package. In fact, it might be a good time to define a few of the Skipper concepts as simply as possible (see the <a href="https://docs.spring.io/spring-cloud-skipper/docs/current/reference/htmlsingle/#_concepts">reference documentation</a> for a complete description):</p>
+
+<ul>
+<li>Platform - a deployment platform that has a Spring Cloud Deployer SPI implementation</li>
+<li>Repository - a persistent store where packages are kept</li>
+<li>Package - a zip file containing YAML files describing metatdata about the application as well as <a href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_application_properties">application</a> and <a href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_deployment_properties">deployment</a> properties in the context of Spring Cloud Data Flow.</li>
+<li>Release - a persistent handle to an instance of an installed package to an available platform. This allows you to upgrade, rollback and otherwise manage the lifecycle of an application.</li>
+</ul>
+
+<p>To tell Skipper about our Hello World application we need to create a Skipper package to represent it. As mentioned a package is simply a zip archive of YAML files. The package structure looks like this:</p>
+
+<pre><code class="language-console">skipper-app-0.1.0.BUILD-SNAPSHOT
+├── package.yml
+├── templates
+│   └── template.yml
+└── values.yml
+</code></pre>
+
+<p>As simple as the structure and content of the package are, the only current method of creating this structure is doing it by hand (to my knowledge). Therefore I have written a <a href="https://github.com/donovanmuller/spring-cloud-skipper-maven-plugin">Spring Cloud Skipper Maven plugin</a> to help build a Skipper package. This plugin can be found here:</p>
+
+<p><a href="https://github.com/donovanmuller/spring-cloud-skipper-maven-plugin">https://github.com/donovanmuller/spring-cloud-skipper-maven-plugin</a></p>
+
+<p>It contains <a href="https://github.com/donovanmuller/spring-cloud-skipper-maven-plugin/tree/master/src/main/resources/skipper">templates</a> for the common package files and uses the Maven project values to populate much of the template properties (<code>project.artifactId</code>, <code>project.version</code>, etc.). It also provides the ability to override any of these template files in the project if you need to tweak or add properties. This plugin is configured to run on the <code>package</code> phase in our demo application&rsquo;s <a href="https://github.com/donovanmuller/skipper-app/blob/master/pom.xml#L94"><code>pom.xml</code></a>. Let&rsquo;s package our application now and see the Skipper package that get&rsquo;s generated:</p>
+
+<pre><code class="language-console">skipper-app $ ./mvnw package
+...
+[INFO]
+[INFO] --- maven-jar-plugin:2.6:jar (default-jar) @ skipper-app ---
+[INFO] Building jar: /Users/donovan/dev/git/switchbit/blog/skipper-app/target/skipper-app-0.1.0.BUILD-SNAPSHOT.jar
+[INFO]
+[INFO] --- spring-boot-maven-plugin:1.5.9.RELEASE:repackage (default) @ skipper-app ---
+[INFO]
+[INFO] --- spring-cloud-skipper-maven-plugin:0.1.0.BUILD-SNAPSHOT:skipper-package (default) @ skipper-app ---
+[INFO] Packaging application [skipper-app] for Spring Cloud Skipper
+[INFO] Skipper package available at /.../skipper-app/target/skipper/skipper-app-0.1.0.BUILD-SNAPSHOT.zip
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+skipper-app $
+</code></pre>
+
+<p>Let&rsquo;s have a look at the package files:</p>
+
+<pre><code class="language-console">skipper-app $ unzip target/skipper/skipper-app-0.1.0.BUILD-SNAPSHOT.zip -d /tmp
+skipper-app $ cat /tmp/skipper-app-0.1.0.BUILD-SNAPSHOT/templates/template.yml
+apiVersion: skipper.spring.io/v1
+kind: SpringCloudDeployerApplication
+metadata:
+  name: skipper-app
+spec:
+  resource: maven://io.switchbit:skipper-app:{{version}}
+  resourceMetadata: maven://io.switchbit:skipper-app:jar:metadata:{{version}}
+  version: {{version}}
+...
+skipper-app $
+</code></pre>
+
+<p>Note that the <code>metadata.name</code> and <code>spec.resource</code> values are populated with the values from our Maven POM.</p>
+
+<pre><code class="language-console">skipper-app $ cat /tmp/skipper-app-0.1.0.BUILD-SNAPSHOT/package.yml
+apiVersion: skipper.spring.io/v1
+kind: SkipperPackageMetadata
+name: skipper-app
+displayName: Skipper Test App
+version: 0.1.0.BUILD-SNAPSHOT
+packageSourceUrl: https://github.com/donovanmuller/skipper-app
+packageHomeUrl: https://github.com/donovanmuller/skipper-app
+tags: spring, spring cloud
+maintainer: https://github.com/donovanmuller
+description: Testing an app deployed via Spring Cloud Skipper
+iconUrl: https://upload.wikimedia.org/wikipedia/commons/d/d7/Twemoji2_1f30d.svg
+skipper-app $ cat /tmp/skipper-app-0.1.0.BUILD-SNAPSHOT/values.yml
+version: 0.1.0.BUILD-SNAPSHOT
+spec:
+  deploymentProperties:
+    spring.cloud.deployer.openshift.service.name: skipper-app
+skipper-app $    
+</code></pre>
+
+<p>Similarly, the properties in <code>package.yml</code> and <code>values.yml</code> are populated from our POM properties.</p>
+
+<h3 id="application-properties">Application properties</h3>
+
+<p>The astute reader might have noticed an additional property in <code>template.yml</code> above, spcifically the <code>resourceMetadata: maven://io.switchbit:skipper-app:jar:metadata:{{version}}</code> property. I&rsquo;m highlighting this property because it is used to surface any <a href="https://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_application_properties">application properties</a> in the wizard driven UI when provisioning the application through the OpenShift Catalog. We&rsquo;ll see this in action soon but for interest, this is how it works:</p>
+
+<ol>
+<li>Use the <code>spring-cloud-app-starter-metadata-maven-plugin</code> to generate a metadata JAR containing <em>all</em> properties mined from our application as well as a <a href="https://github.com/donovanmuller/skipper-app/blob/master/src/main/resources/META-INF/spring-configuration-metadata-whitelist.properties">whitelist</a> of properties we&rsquo;d like to surface</li>
+<li>This metadata artifact is referenced in our <code>template.yml</code> as mentioned above via the <code>resourceMetadata</code> property</li>
+<li>The retrofitted Skipper server resolves this artifact on deploy and extracts all the whitelisted properties via a <a href="https://github.com/spring-cloud/spring-cloud-dataflow/blob/master/spring-cloud-dataflow-configuration-metadata/src/main/java/org/springframework/cloud/dataflow/configuration/metadata/BootApplicationConfigurationMetadataResolver.java"><code>BootApplicationConfigurationMetadataResolver</code></a> from the Spring Cloud Data Flow project and adds it to the OSB Service Definition model returned as part of the Catalog</li>
+</ol>
+
+<h2 id="say-hello-already">Say hello already</h2>
+
+<p>Finally we get to the meat of this nautical themed sandwich. Let&rsquo;s use our newly minted Skipper package and upload it to the <code>local</code> repository. To do that we&rsquo;re going to use the Skipper Shell. First though, let&rsquo;s Maven deploy our application to our Nexus repository so the Skipper server can resolve our app:</p>
+
+<pre><code class="language-console">skipper-app $ nexus_route_host=$(oc get route nexus --template={{.spec.host}} -n skipper)
+skipper-app $ ./mvnw -s .settings.xml \
+  deploy \
+  -Dnexus.url=http://${nexus_route_host}/content/repositories/snapshots/ \
+  -DskipTests
+...
+[INFO]
+[INFO] --- maven-deploy-plugin:2.8.2:deploy (default-deploy) @ skipper-app ---
+...
+Uploading to nexus: http://nexus-skipper.192.168.64.55.nip.io/content/repositories/snapshots/io/switchbit/skipper-app/0.1.0.BUILD-SNAPSHOT/skipper-app-0.1.0.BUILD-20171221.071129-1.jar
+Uploaded to nexus: http://nexus-skipper.192.168.64.55.nip.io/content/repositories/snapshots/io/switchbit/skipper-app/0.1.0.BUILD-SNAPSHOT/skipper-app-0.1.0.BUILD-20171221.071129-1.jar (16 MB at 18 MB/s)
+Uploading to nexus: http://nexus-skipper.192.168.64.55.nip.io/content/repositories/snapshots/io/switchbit/skipper-app/0.1.0.BUILD-SNAPSHOT/skipper-app-0.1.0.BUILD-20171221.071129-1.pom
+Uploaded to nexus: http://nexus-skipper.192.168.64.55.nip.io/content/repositories/snapshots/io/switchbit/skipper-app/0.1.0.BUILD-SNAPSHOT/skipper-app-0.1.0.BUILD-20171221.071129-1.pom (5.7 kB at 85 kB/s)
+...
+Uploading to nexus: http://nexus-skipper.192.168.64.55.nip.io/content/repositories/snapshots/io/switchbit/skipper-app/0.1.0.BUILD-SNAPSHOT/skipper-app-0.1.0.BUILD-20171221.071129-1-metadata.jar
+Uploaded to nexus: http://nexus-skipper.192.168.64.55.nip.io/content/repositories/snapshots/io/switchbit/skipper-app/0.1.0.BUILD-SNAPSHOT/skipper-app-0.1.0.BUILD-20171221.071129-1-metadata.jar (39 kB at 683 kB/s)
+...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------  
+skipper-app $
+</code></pre>
+
+<p>Next, go to the root of your retrofitted Skipper clone and execute the following:</p>
+
+<pre><code class="language-console">spring-cloud-skipper $ ./mvnw install -DskipTests
+...
+spring-cloud-skipper $ skipper_route_host=$(oc get route skipper --template={{.spec.host}} -n skipper)
+spring-cloud-skipper $ java -jar spring-cloud-skipper-shell/target/spring-cloud-skipper-shell-1.0.0.BUILD-SNAPSHOT.jar --spring.cloud.skipper.client.uri=http://${skipper_route_host}/api
+skipper:&gt; platform list
+╔═══════╤═════════╤═════════════════════════════════════════════════════════════════════════════════════════╗
+║ Name  │  Type   │                                       Description                                       ║
+╠═══════╪═════════╪═════════════════════════════════════════════════════════════════════════════════════════╣
+║skipper│openshfit│master url = [https://kubernetes.default.svc/], namespace = [skipper], api version = [v1]║
+╚═══════╧═════════╧═════════════════════════════════════════════════════════════════════════════════════════╝
+
+skipper:&gt; search
+╔════╤═══════╤═══════════╗
+║Name│Version│Description║
+╚════╧═══════╧═══════════╝
+
+skipper:&gt;
+</code></pre>
+
+<p>The above connects the Skipper Shell to our Skipper instance running in our&hellip; <code>skipper</code> OpenShift. You can see we only have one platform available, which is using the <a href="https://github.com/donovanmuller/spring-cloud-skipper-deployer-openshift">Spring Cloud Skipper Deployer for OpenShift</a> *. We also have no package uploaded. Let&rsquo;s fix that:</p>
+
+<pre><code class="language-console">skipper:&gt; upload --path /.../skipper-app/target/skipper/skipper-app-0.1.0.BUILD-SNAPSHOT.zip --repo-name local
+Package uploaded successfully:[skipper-app:0.1.0.BUILD-SNAPSHOT]
+skipper:&gt;search
+╔═══════════╤════════════════════╤════════════════════════════════════════════════╗
+║   Name    │      Version       │                  Description                   ║
+╠═══════════╪════════════════════╪════════════════════════════════════════════════╣
+║skipper-app│0.1.0.BUILD-SNAPSHOT│Testing an app deployed via Spring Cloud Skipper║
+╚═══════════╧════════════════════╧════════════════════════════════════════════════╝
+
+skipper:&gt;
+</code></pre>
+
+<p>Referencing the Skipper package we built above, we simply upload it to Skipper to the <code>local</code> repository.</p>
+
+<p>Now head back to your OpenShift web console and open up the Catalog. You should see our demo application:</p>
+
+<p><img src="skipper-app-in-catalog-old.jpg" alt="skipper-app-in-catalog-old" /></p>
+
+<p>Go ahead and click the Skipper Test App catalog item. Click <em>Next</em> (note the description text from our POM) and you should see the below form:</p>
+
+<p><img src="skipper-app-provision-empty-form.png" alt="skipper-app-provision-empty-form" /></p>
+
+<p>Of interest is the <code>Greeting</code> field, which is an application property from our application containing the default greeting value. Fill out the form as follows:</p>
+
+<ul>
+<li>Add to Project - Select the <code>skipper</code> project</li>
+<li>Deployment properties - Add the following value:
+
+<ul>
+<li><code>spring.cloud.deployer.openshift.createRoute: true,spring.cloud.deployer.openshift.deployment.route.host: skipper-app.192.168.64.55.nip.io</code> - this informs the OpenShift deployer to create a <a href="https://docs.openshift.org/latest/dev_guide/routes.html">Route</a> with the URL of <a href="http://skipper-app.192.168.64.55.nip.io">http://skipper-app.192.168.64.55.nip.io</a> so that we can access our application</li>
+</ul></li>
+<li>Greeting - Let&rsquo;s spice up the greeting a bit, enter the following (or whatever floats your boat): <code>A Skipper app says hello</code></li>
+</ul>
+
+<p><img src="skipper-app-provision-filled-form.png" alt="skipper-app-provision-filled-form" /></p>
+
+<p>Now click <em>Create</em>!
+Then follow the <em>Continue to the project overview</em> link. If everything goes well, you should see our demo application deployed and running after it has been <a href="https://donovanmuller.github.io/spring-cloud-dataflow-server-openshift/docs/1.2.1.RELEASE/reference/htmlsingle/#_support_for_maven_resource">built</a>:</p>
+
+<p><img src="skipper-app-deployment.png" alt="skipper-app-deployment" /></p>
+
+<p>Let&rsquo;s go back to the Skipper Shell and verify that our application has a release and all is good:</p>
+
+<pre><code class="language-console">skipper:&gt;list
+╔════════════════════════════════════╤═══════╤══════════════════════════╤════════╤═══════════╤════════════════════╤════════════╤══════════════════════════════════════════════════════════════════════╗
+║                Name                │Version│       Last updated       │ Status │  Package  │  Package Version   │  Platform  │                           Platform Status                            ║
+║                                    │       │                          │        │   Name    │                    │    Name    │                                                                      ║
+╠════════════════════════════════════╪═══════╪══════════════════════════╪════════╪═══════════╪════════════════════╪════════════╪══════════════════════════════════════════════════════════════════════╣
+║ac1bc653-f417-48df-a72e-75e808199aeb│1      │Thu Dec 21 17:45:58 SAST  │DEPLOYED│skipper-app│0.1.0.BUILD-SNAPSHOT│skipper     │[ac1bc653-f417-48df-a72e-75e808199aeb-skipper-app-v1], State =        ║
+║                                    │       │2017                      │        │           │                    │            │[unknown]                                                             ║
+╚════════════════════════════════════╧═══════╧══════════════════════════╧════════╧═══════════╧════════════════════╧════════════╧══════════════════════════════════════════════════════════════════════╝
+
+skipper:&gt;history --release-name ac1bc653-f417-48df-a72e-75e808199aeb
+╔═══════╤═════════════════════════════╤════════╤════════════╤════════════════════╤════════════════╗
+║Version│        Last updated         │ Status │Package Name│  Package Version   │  Description   ║
+╠═══════╪═════════════════════════════╪════════╪════════════╪════════════════════╪════════════════╣
+║1      │Thu Dec 21 17:45:58 SAST 2017│DEPLOYED│skipper-app │0.1.0.BUILD-SNAPSHOT│Install complete║
+╚═══════╧═════════════════════════════╧════════╧════════════╧════════════════════╧════════════════╝
+
+skipper:&gt;
+</code></pre>
+
+<p>Note that the <a href="https://github.com/openservicebrokerapi/servicebroker/blob/v2.13/spec.md#provisioning">Service Instance</a> Id has become the release name.
+Back to the OpenShift web console and click the Route URL and you should also see your greeting:</p>
+
+<p><img src="skipper-app-working.png" alt="skipper-app-working" /></p>
+
+<p>Finally, let&rsquo;s clean things up by selecting the kabob menu next to our service instance under Provisioned Services and click <em>Delete</em>:</p>
+
+<p><img src="skipper-app-delete.png" alt="skipper-app-delete" /></p>
+
+<p>Your service instance/application should be undeployed.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>This experiment was an oppurtunity to explore two new things, the Open Service Broker API as implemented by OpenShift/Kubernetes and Spring Cloud Skipper for deploying Spring Boot applications in a consistent, Continuous Deployment friendly, cross platform way.</p>
+
+<p>Hopefully you&rsquo;ve learnt something, I certainly did.
+If you have any feedback please don&rsquo;t hesitate to let me know on Twitter at <a href="https://twitter.com/donovancmuller">@donovancmuller</a>. 👍</p>
+
+</div>
+
+
+    </div>
+
+    
+  </body>
+</html>

@@ -6,18 +6,19 @@
     <description>Recent content on Donovan Muller</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 26 May 2018 22:28:17 +0200</lastBuildDate>
+    <lastBuildDate>Fri, 22 Dec 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://donovanmuller.blog/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Testing Post</title>
-      <link>https://donovanmuller.blog/testing-post/</link>
-      <pubDate>Sat, 26 May 2018 22:28:17 +0200</pubDate>
+      <title>Spring Cloud Skipper as a Service Broker</title>
+      <link>https://donovanmuller.blog/spring-cloud-skipper-as-a-service-broker/</link>
+      <pubDate>Fri, 22 Dec 2017 00:00:00 +0000</pubDate>
       
-      <guid>https://donovanmuller.blog/testing-post/</guid>
-      <description>Test 🤪</description>
+      <guid>https://donovanmuller.blog/spring-cloud-skipper-as-a-service-broker/</guid>
+      <description>Kubernetes recently added support for the Open Service Broker API. Spring Cloud Skipper, an equally new project, provides a Continuous Delivery platform to deploy Spring Boot based applications to cloud platforms. Eager to play around with both, I combine both topics in the ubiquitous &amp;ldquo;hello world&amp;rdquo; demonstration with OpenShift.
+Open Service Broker API The Open Service Broker API initiative was announced late in 2016 and established a working group to foster an industry standard for provisioing and wiring services into modern cloud native platforms.</description>
     </item>
     
   </channel>
