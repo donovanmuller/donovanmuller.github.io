@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Spring Cloud Deployer OpenShift &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>Spring Cloud Deployer OpenShift</h1>
+  <span class="post-date">Mon, Jul 11, 2016</span>
+  
+
+<p>A Spring Cloud Deployer SPI implementation which extends Spring Cloud Deployer Kubernetes adding support for OpenShift 3 and with that the ability to accept both Docker <em>and</em> Maven resources.</p>
+
+<blockquote>
+<p><em>Update (2017/02/19)</em>: Since this post was written, a <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/releases/tag/v1.1.0.RELEASE">1.1.0</a> release of the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift">Spring Cloud Data Flow Server for OpenShift</a> has been released. This release simplified the deployment of the server in an OpenShift environment using <a href="https://docs.openshift.org/latest/dev_guide/templates.html">Templates</a> and should be considered the <strong>recommended deployment mechanism</strong>. For more information, see the reference documentation and specifically the <a href="https://donovanmuller.github.io/spring-cloud-dataflow-server-openshift/docs/1.1.0.RELEASE/reference/htmlsingle#getting-started">&ldquo;Getting Started&rdquo;</a> section.</p>
+</blockquote>
+
+<h2 id="some-applicationcontext">Some ApplicationContext</h2>
+
+<p>I&rsquo;ve been following the progress of the <a href="http://cloud.spring.io/spring-cloud-dataflow/">Spring Cloud Data Flow</a> project for some time, with great interest. The concept of composing singularly focused, yet standalone apps, into a directed graph (defined as a <a href="http://cloud.spring.io/spring-cloud-stream/">stream</a> or <a href="http://cloud.spring.io/spring-cloud-task/">task</a>) of functionality encompassing a bounded context (in DDD terms), rather excites me.</p>
+
+<p>With the project&rsquo;s roots sprouting from <a href="http://projects.spring.io/spring-xd/">Spring XD</a>, the obvious application of SCDF (Spring Cloud Data Flow) is stream processing data pipelines and the like. In other words, source data, process or analyse that data and then sink the processed/analysed data in some store or messaging system for further processing. However, my intended use of this project extends beyond this to also include building &ldquo;microservices&rdquo; comprising of finer grained components (apps) and composing them using SCDF. I.e. with a &ldquo;catalogue&rdquo; of very focused applications, have the ability to compose a stream/task definition from these applications that fulfills the larger scoped functionality required.</p>
+
+<p>Spring Cloud Data Flow builds off the foundation of <a href="https://blog.pivotal.io/pivotal-cloud-foundry/products/spring-cloud-stream-the-new-event-driven-microservice-framework">Spring Cloud Stream</a>, a framework for building event driven microservice applications, as well as <a href="https://spring.io/blog/2016/01/27/introducing-spring-cloud-task">Spring Cloud Task</a>, a framework to support short lived microservices.</p>
+
+<p><em>From here on out, we will use a stream definition to demonstrate the OpenShift deployer. Launching a Task will form the content of another future post. However, most of the functionality implemented for stream deployment is the same for launching tasks.</em></p>
+
+<h2 id="deploying-all-the-things">Deploying all the things</h2>
+
+<p>SCDF makes composing these directed graphs or flows (either of the stream or task variety) quite easy by using the same pipe syntax used by most *nix shells. For instance to compose a stream definition consisting of a Http source application and a Log sink application, you would define that stream as follows:</p>
+
+<pre><code>http | log
+
+</code></pre>
+
+<p>In case you&rsquo;re wondering where the <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/http/spring-cloud-starter-stream-source-http">Http</a> and <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/log/spring-cloud-starter-stream-sink-log">Log</a> applications came from, there are a number of out-of-the-box applications provided by the <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters">Spring Cloud Stream App Starters</a> project. There are Rabbit MQ and Kafka binders variants for each application.</p>
+
+<p>Once the stream definition is defined, it is the responsibility of the Data Flow Server to interpret it and convert that into an <a href="https://github.com/spring-cloud/spring-cloud-deployer/blob/master/spring-cloud-deployer-spi/src/main/java/org/springframework/cloud/deployer/spi/core/AppDeploymentRequest.java"><code>AppDeploymentRequest</code></a> which is then passed through one of the deployer implementations to actually deploy the applications to the target environment.</p>
+
+<h3 id="data-flow-server">Data Flow server?</h3>
+
+<p>The <a href="https://github.com/spring-cloud/spring-cloud-deployer">Spring Cloud Deployer</a> project contains the core logic and an SPI to deploy a stream/task definition to an environment. There are currently 5 implementations supporting deployment environments like Cloud Foundry, YARN, Mesos and Kubernetes. There is also a Local server for debugging purposes.</p>
+
+<p>The server runs as a standalone Spring Boot app (like <em>all</em> other apps do as well) and has a RESTful API through which applications like the Spring Cloud Data Flow Shell and UI use to manage and deploy streams/tasks.</p>
+
+<h2 id="openshift">OpenShift</h2>
+
+<p>Kubernetes is a great project for scheduling containers and <a href="https://www.openshift.org/">OpenShift 3</a> builds off the Kubernetes foundation and adds a few extra bits and bobs which help with the developer experience around getting code into containers, as well as with beefing up security and other &ldquo;enterprisey&rdquo; concerns.</p>
+
+<p>Fortunately, as mentioned, there is a <a href="https://github.com/spring-cloud/spring-cloud-deployer-kubernetes">Kubernetes deployer</a> for SCDF. As OpenShift is basically Kubernetes, one might think that you would be able to use the Kubernetes deployer to deploy to OpenShift&hellip;</p>
+
+<p>Unfortunately, this is not the case. There are slight API differences that prevent the existing Kubernetes deployer from authenticating etc. 💩 What to do?</p>
+
+<h2 id="spring-cloud-openshift-deployer">Spring Cloud OpenShift Deployer</h2>
+
+<p>Using the Kubernetes deployer as a base, I&rsquo;ve implemented an <a href="https://github.com/donovanmuller/spring-cloud-deployer-openshift">OpenShift deployer</a> for SCDF. It does (almost) everything the Kubernetes deployer does but also adds some nice functionality that is possible with OpenShift. Here are some of the key features currently implemented:</p>
+
+<ul>
+<li>Most functionality currently in the Kubernetes deployer to support deploying <code>docker:</code> resources</li>
+<li>Using the OpenShift BuildConfig/Build resources, add the ability to support <code>maven://</code> resources, which are built and then deployed as containers</li>
+<li>Use OpenShift specific resources like <a href="https://docs.openshift.org/latest/architecture/core_concepts/builds_and_image_streams.html#image-streams">ImageStream</a>, <a href="https://docs.openshift.org/latest/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations">DeploymentConfig</a>, Route etc. to better support rolling updates, exposing pods via load balancers and such.</li>
+</ul>
+
+<p>The next sections will walk you through how to deploy <code>maven://</code> resources with the OpenShift deployer. Probably the biggest feature of the OpenShift deployer.</p>
+
+<h3 id="getting-started">Getting Started</h3>
+
+<p>Spring Cloud Data Flow and Deployer are still under heavy development (as of writing) as the team forges on to a 1.0.0 release for SCDF. This, together with the fact that I have made a few modifications to aid in extending the Kubernetes deployer, means for now you first need to build my forked versions of the following two projects:</p>
+
+<ul>
+<li><a href="https://github.com/donovanmuller/spring-cloud-deployer">spring-cloud-deployer</a> - donovanmuller/spring-cloud-deployer</li>
+<li><a href="https://github.com/donovanmuller/spring-cloud-deployer-kubernetes">spring-cloud-deployer-kubernetes</a> - donovanmuller/spring-cloud-deployer-kubernetes</li>
+</ul>
+
+<p>There are minor changes to make extending/reusing certain methods easier as well as a requirement to be able to resolve the <code>.pom</code> Maven artifact in addition to the <code>.jar</code>.</p>
+
+<p>The following PR&rsquo;s address the modifications:</p>
+
+<ul>
+<li><del>Add ability to resolve pom extensions in spring-cloud-deployer [<a href="https://github.com/spring-cloud/spring-cloud-deployer/pull/94">#94</a>]</del> merged as <a href="https://github.com/spring-cloud/spring-cloud-deployer/commit/fac89fe55dc4292615d3443f75b49192e51a6c55">fac89fe</a></li>
+<li><del>Make spring-cloud-deployer-kubernetes more extendable [<a href="https://github.com/spring-cloud/spring-cloud-deployer-kubernetes/pull/40">#40</a>]</del></li>
+</ul>
+
+<p>First, clone and install both projects:</p>
+
+<pre><code>$ git clone https://github.com/donovanmuller/spring-cloud-deployer-kubernetes.git &amp;&amp; \
+  cd spring-cloud-deployer-kubernetes &amp;&amp; \
+  ./mvnw install
+
+$ git clone https://github.com/donovanmuller/spring-cloud-deployer.git &amp;&amp; \
+  cd spring-cloud-deployer &amp;&amp; \
+  ./mvnw install
+</code></pre>
+
+<p>If all goes well, you should have two <code>BUILD SUCCESS</code>&rsquo;s.</p>
+
+<h3 id="local-openshift-instance">Local OpenShift instance</h3>
+
+<p>One of the easiest ways to get an OpenShift instance up and running is to use one of the Vagrant images available. Most should work but I&rsquo;m using the <a href="http://fabric8.io/guide/getStarted/vagrant.html">Fabric8 OpenShift box</a>.</p>
+
+<p>Follow <a href="http://fabric8.io/guide/getStarted/vagrant.html#how-to-vagrant-up">these instructions</a> to stand up a local instance configured with a registry, router and other components that will come in handy in later posts.</p>
+
+<p>Once you&rsquo;re done (might take a while depending on your bandwidth) you should be able to access (ignore the self signed certiticate, login credentials are <code>admin</code>/<code>admin</code>) the OpenShift console with a URL similar too: <a href="https://172.28.128.4:8443/console/">https://172.28.128.4:8443/console/</a></p>
+
+<p><img src="openshift-clean-install.png" alt="" /></p>
+
+<h3 id="kafka">Kafka</h3>
+
+<p>We will be using the Kafka binder for our apps, so we need to run an instance of Kafka on our OpenShift instance. This is pretty easy, thanks to predefined templates included in the <a href="spring-cloud-dataflow-server-kubernetes">spring-cloud-dataflow-server-kubernetes</a> project under <a href="spring-cloud-dataflow-server-kubernetes/src/etc/kubernetes"><code>src/etc/kubernetes</code></a>.</p>
+
+<p>First, let&rsquo;s create a new project (a namespace in Kubernetes terms) to hold our Data Flow streams/tasks as the <code>default</code> project is a little cluttered at this point. Click the projects dropdown and select &ldquo;<em>View all projects</em>&ldquo;</p>
+
+<p><img src="all-projects.png" alt="" /></p>
+
+<p>then click the &ldquo;<em>New Project</em>&rdquo; button on the projects listing page. Fill out the form:</p>
+
+<p><img src="new-project.png" alt="" /></p>
+
+<p>and &ldquo;<em>Create</em>&rdquo; the new project.</p>
+
+<p>To run these templates through OpenShift we will use the <code>oc</code> <a href="https://docs.openshift.org/latest/cli_reference/index.html">CLI tool</a> (basically <code>kubectl</code> with some added features for OpenShift) included with the OpenShift install. First clone the <a href="spring-cloud-dataflow-server-kubernetes">spring-cloud-dataflow-server-kubernetes</a> project, then copy the Kafka templates to the location of your Fabric8 Vagrantfile (this location is <a href="https://www.vagrantup.com/docs/synced-folders/">shared by default</a> by Vagrant from your Vagrantfile directory to <code>/vagrant</code> inside the VM).</p>
+
+<pre><code>$ git clone https://github.com/spring-cloud/spring-cloud-dataflow-server-kubernetes.git &amp;&amp; \
+  cd spring-cloud-dataflow-server-kubernetes &amp;&amp; \
+  cp src/etc/kubernetes/kafka-* &lt;your cloned fabric8 location&gt;/fabric8-installer/vagrant/openshift
+
+$ cd &lt;your cloned fabric8 location&gt;/fabric8-installer/vagrant/openshift
+</code></pre>
+
+<p>then, <code>ssh</code> into your Vagrant OpenShift VM, authenticate your <code>oc</code> session, change to our <code>scdf-apps</code> project and create our Kafka resources:</p>
+
+<pre><code>$ vagrant ssh
+[vagrant@vagrant vagrant]$ oc login
+Server [https://localhost:8443]:
+The server uses a certificate signed by an unknown authority.
+You can bypass the certificate check, but any data you send to the server could be intercepted by others.
+Use insecure connections? (y/n): y
+
+Authentication required for https://localhost:8443 (openshift)
+Username: admin
+Password:
+Login successful.
+
+You have access to the following projects and can switch between them with 'oc project &lt;projectname&gt;':
+
+  * default (current)
+  * openshift
+  * openshift-infra
+  * scdf-apps
+  * user-secrets-source-admin
+
+Using project &quot;default&quot;.
+Welcome! See 'oc help' to get started.
+
+[vagrant@vagrant vagrant]$ oc project scdf-apps
+Now using project &quot;scdf-apps&quot; on server &quot;https://localhost:8443&quot;.
+[vagrant@vagrant vagrant]$ oc create -f /vagrant/kafka-controller.yml
+replicationcontroller &quot;kafka&quot; created
+[vagrant@vagrant vagrant]$ oc create -f /vagrant/kafka-service.yml
+service &quot;kafka&quot; created
+service &quot;zk&quot; created
+</code></pre>
+
+<p>It might take moment to pull the Kafka image but eventually you should have a Kafka pod and services running bright blue (why not choose green? ;))</p>
+
+<p><img src="kafka-installed.png" alt="" /></p>
+
+<h2 id="deploying-a-simple-stream">Deploying a simple stream</h2>
+
+<p>Infrastructure in place, let&rsquo;s deploy some streams.
+The last projects to clone are the OpenShift deployer SPI implementation and the OpenShift Data Flow server.</p>
+
+<pre><code>$ git clone https://github.com/donovanmuller/spring-cloud-deployer-openshift.git &amp;&amp; \
+  cd spring-cloud-deployer &amp;&amp; \
+  ./mvnw install
+
+$ git clone https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift.git &amp;&amp; \
+  cd spring-cloud-deployer &amp;&amp; \
+  ./mvnw package
+</code></pre>
+
+<p>Once the spring-cloud-dataflow-server-openshift project is successfully built. It&rsquo;s time to fire up our Data Flow server:</p>
+
+<pre><code>$ cd spring-cloud-dataflow-server-openshift/target
+$ java -Dopenshift.url=https://172.28.128.4:8443 \
+  -Dkubernetes.master=https://172.28.128.4:8443 \
+  -Dkubernetes.trust.certificates=true \
+  -Dkubernetes.auth.basic.username=admin \
+  -Dkubernetes.auth.basic.password=admin \
+  -jar spring-cloud-dataflow-server-openshift-1.0.0.BUILD-SNAPSHOT.jar \
+  --spring.cloud.deployer.kubernetes.namespace=scdf-apps \
+  --maven.resolvePom=true \
+  --maven.remote-repositories.spring.url=http://repo.spring.io/snapshots
+</code></pre>
+
+<p>if all goes well you should see the OpenShift Data Flow server started up successfully:</p>
+
+<pre><code>... INFO 24706 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 9393 (http)
+... INFO 24706 --- [           main] o.s.c.d.s.k.OpenShiftDataFlowServer      : Started OpenShiftDataFlowServer in 10.004 seconds (JVM running for 10.512)
+</code></pre>
+
+<p>Next, we&rsquo;ll use the Data Flow shell to add our stream definition and issue the deploy command. Download the shell:</p>
+
+<pre><code>$ wget http://repo.spring.io/snapshot/org/springframework/cloud/spring-cloud-dataflow-shell/1.0.0.BUILD-SNAPSHOT/spring-cloud-dataflow-shell-1.0.0.BUILD-SNAPSHOT.jar
+</code></pre>
+
+<p>and run it:</p>
+
+<pre><code>$ java -jar spring-cloud-dataflow-shell-1.0.0.BUILD-SNAPSHOT.jar
+</code></pre>
+
+<p>you should see some ascii art and the Data Flow shell prompt. Note that the shell will connect to a Data Flow server on the default endpoint of <code>http://localhost:9393</code>:</p>
+
+<p><img src="shell.png" alt="" /></p>
+
+<h3 id="registering">Registering</h3>
+
+<p>Before we can define our stream, we need to tell the Data Flow server what apps it has available. This is done with the <code>app register</code> command. Go ahead and register the Http and Log apps with the commands below:</p>
+
+<pre><code>dataflow:&gt;app register --name http --type source --uri maven://org.springframework.cloud.stream.app:http-source-kafka:1.0.0.BUILD-SNAPSHOT
+Successfully registered application 'source:http'
+
+dataflow:&gt;app register --name log --type sink --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.0.0.BUILD-SNAPSHOT
+Successfully registered application 'sink:log'
+</code></pre>
+
+<p>Note that we register the apps with a URI starting with <code>maven://</code>.
+Usually when using the Kubernetes deployer you would only be able to use the <code>docker:</code> URI when <a href="http://docs.spring.io/spring-cloud-dataflow-server-kubernetes/docs/current-SNAPSHOT/reference/htmlsingle/#_deploying_streams_on_kubernetes">registering apps</a> but because of the <a href="https://docs.openshift.org/latest/dev_guide/builds.html">Build/BuildConfig</a> objects in OpenShift, we can support handling <code>maven://</code> URI&rsquo;s. The Maven artifacts referenced by the <code>maven://</code> URI will be included in an image build by OpenShift and the resulting image is deployed to OpenShift (as if it were a <code>docker:</code> URI registered app)</p>
+
+<h3 id="a-stream-defined">A stream, defined</h3>
+
+<p>Finally we can compose our Http and Log apps into a stream:</p>
+
+<pre><code>dataflow:&gt;stream create --name http-log --definition &quot;http --server.port=9000 | log&quot;
+Created new stream 'http-log'
+</code></pre>
+
+<p>Quite straightforward, give our stream a name (<code>--name http-log</code>) and then the actual pipe delimited definition (<code>--definition &quot;http --server.port=9000 | log&quot;</code>).</p>
+
+<p>How this reads is:</p>
+
+<blockquote>
+<p>Create a new stream with <code>http-log</code> as the name to reference it with later.
+This stream is defined as having a <code>http</code> source app, listening on port 9000 (overriding the default port of 8080, as you would in any Spring Boot app) which, upon receiving a HTTP POST, will send the request body to it&rsquo;s Spring Cloud Stream defined binding output. The output of the <code>http</code> app will then be &ldquo;piped&rdquo; (really it&rsquo;s just a automatic mapping of the output/input binder destinations by the Data Flow Server) into the input of the <code>log</code> app, which will log the content of the input message.</p>
+</blockquote>
+
+<p>The mechanics of how the Data Flow Server performs this &ldquo;automatic&rdquo; binding of input/output destinations on the Spring Cloud Stream binders is something for another post. However, have a look at the [<code>StreamDeploymentController</code>]((<a href="https://github.com/spring-cloud/spring-cloud-dataflow/blob/master/spring-cloud-dataflow-server-core/src/main/java/org/springframework/cloud/dataflow/server/controller/StreamDeploymentController.java#L211">https://github.com/spring-cloud/spring-cloud-dataflow/blob/master/spring-cloud-dataflow-server-core/src/main/java/org/springframework/cloud/dataflow/server/controller/StreamDeploymentController.java#L211</a>) for more information.</p>
+
+<h3 id="go-go-go">Go, go, go</h3>
+
+<p>Now, the reason we&rsquo;re all here.</p>
+
+<pre><code>dataflow:&gt;stream deploy http-log
+Deployed stream 'http-log'
+</code></pre>
+
+<p>if all goes well you should notice that two new builds are triggered in our <code>scdf-apps</code> project:</p>
+
+<p><img src="Screen-Shot-2016-07-10-at-3-24-25-PM.png" alt="" /></p>
+
+<p>The builds might take quite a while the first time due to the number of images it needs to pull.</p>
+
+<h3 id="build-build-what-from-where">Build, build what? From where?</h3>
+
+<p>You might be wondering how OpenShift knows how to build our app image and where the app is actually been sourced from? Is a Maven build being kicked off?</p>
+
+<p>Well the answer is no (by default but you could make it do that). What is happening is that the default <a href="https://docs.openshift.org/latest/dev_guide/builds.html#docker-strategy-options">Docker build strategy</a> is being used with the default <a href="?"><code>Dockerfile</code></a> provided by the OpenShift Data Flow Server as the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#dockerfile-source">Dockerfile input source</a> to the build. This default <code>Dockerfile</code> looks like this:</p>
+
+<pre><code># Based on: https://spring.io/guides/gs/spring-boot-docker/
+FROM java:8
+
+VOLUME /tmp
+
+RUN wget --user ${repo_auth_username} \
+  --password ${repo_auth_password} \
+  --content-disposition -O /app.jar \
+  &quot;${app_resource_url}&quot;
+
+RUN bash -c 'chmod a+rx /app.jar'
+
+ENTRYPOINT [&quot;java&quot;, &quot;-Djava.security.egd=file:/dev/./urandom&quot;, &quot;-jar&quot;, &quot;/app.jar&quot;]
+</code></pre>
+
+<p>Using a <code>java:8</code> base image, a .jar file referenced by the <code>${app_resource_url}</code> environment variable is downloaded to <code>/app.jar</code>. <code>${app_resource_url}</code> is set by the OpenShift Deployer based on the remote repository configured as well as other URI information. Then as the <code>ENTRYPOINT</code> to the container, the app is run with the equivalent of <code>java -jar /app.jar</code>.</p>
+
+<h3 id="the-route-of-the-problem">The Route of the problem</h3>
+
+<p>By the time you&rsquo;ve read this, hopefully your build would have completed and you will have two shiny new pods running happily:</p>
+
+<p><img src="build-finished-apps-started.png" alt="" /></p>
+
+<p>There&rsquo;s only one problem. We cannot actually reach our <code>http-log-http</code> pod from the outside world. 🤔</p>
+
+<p>In Kubernetes terms you would have to indicate to your Service that you require a LoadBalancer. In OpenShift, similar functionality is fulfilled using a <a href="https://docs.openshift.org/latest/dev_guide/routes.html">Route</a>. Basically automatically triggered configurations on an internal HAProxy instance that can route from the &ldquo;outside&rdquo;, in.</p>
+
+<p>To create a Route resource for our <code>http</code> app, we first need to undeploy our first attempt with:</p>
+
+<pre><code>dataflow:&gt;stream undeploy http-log
+Un-deployed stream 'http-log'
+</code></pre>
+
+<p>Now, let&rsquo;s pass a hint to the deployer to create a Route resource when it deploys the <code>http</code> app next time:</p>
+
+<pre><code>dataflow:&gt;stream deploy http-log --properties &quot;app.http.spring.cloud.deployer.openshift.createRoute=true,app.http.spring.cloud.deployer.openshift.deployment.route.host=http.vagrant.f8&quot;
+Deployed stream 'http-log'
+</code></pre>
+
+<p>Note we actually passed two deployer properties, <code>app.http.spring.cloud.deployer.openshift.createRoute=true</code> which indicated that the deployer needs to create a Route for this app and <code>app.http.spring.cloud.deployer.openshift.deployment.route.host</code> which indicates the <code>host</code> value to use for the exposed Route. I.e. the URL the outside world will use to access the <code>http</code> app. We used <code>http.vagrant.f8</code> because <code>*.vagrant.f8</code> is the resolveable domain exposed by the Fabric8 Vagrant box with the help of the <a href="https://github.com/vagrant-landrush/landrush">landrush plugin</a> (using OSX the plugin works seamlessly, other platforms may be slightly more fiddly).</p>
+
+<p>You should now see your exposed <code>http</code> app with the following URL: <a href="http://http.vagrant.f8:">http://http.vagrant.f8:</a></p>
+
+<p><img src="http-app-route.png" alt="" /></p>
+
+<p>Finally, let&rsquo;s test our deployed stream by POST&rsquo;ing some data to it:</p>
+
+<pre><code>dataflow:&gt;http post --data &quot;Hello, World&quot; --target http://http.vagrant.f8
+&gt; POST (text/plain;Charset=UTF-8) http://http.vagrant.f8 Hello, World
+&gt; 202 ACCEPTED
+</code></pre>
+
+<p>The Data Flow shell has some built in HTTP client capabilities which we can use to POST some data to our app. In this case the obligatory &ldquo;Hello, World&rdquo;. If we check the container logs for the <code>log</code> app, we should see our boring message:</p>
+
+<p><img src="hello-world-1.png" alt="" /></p>
+
+<h3 id="look-ma-no-builds">Look ma, no builds</h3>
+
+<p>When redeploying the <code>http-log</code> stream, did you notice that there was <em>no build triggered</em>. Why is that?</p>
+
+<p>The OpenShift deployer saves a hash of the Maven Jar artifact being used in the build. Before a new build is triggered, the current build artifact is hashed and if the hashes match (i.e. exactly the same Jar artifact as before), no build is triggered and the existing image is reused. The hash algorithm used is the same hashing applied by Maven itself, SHA-1.</p>
+
+<h3 id="dockerfile-resolution">Dockerfile resolution</h3>
+
+<p>As described in the Build section, the default strategy for resolving a Dockerfile is to use the built in Dockerfile included in the OpenShift deployer. However, there are three other strategies available:</p>
+
+<ul>
+<li><p>If a remote Git URI is specified when creating the stream/task definition using the <code>spring.cloud.deployer.openshift.build.git.uri</code> property, this repository will be used and takes highest precedence.</p></li>
+
+<li><p>If <code>src/main/docker/Dockerfile</code> is detected in the Maven artifact Jar, then it is assumed that the <code>Dockerfile</code> will exist in that location in a remote Git repository. In that case, the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#source-code">Git repository source</a> is used in conjunction with the Docker build strategy. The remote Git URI and ref are extracted from the <code>&lt;scm&gt;&lt;connection&gt;&lt;/connection&gt;&lt;/scm&gt;</code> and <code>&lt;scm&gt;&lt;tag&gt;&lt;/tag&gt;&lt;/scm&gt;</code> tags in the <code>pom.xml</code> (if available) of the Maven Jar artifact. For example, if the <code>&lt;scm&gt;&lt;connection&gt;</code> value was <code>scm:git:git@github.com:spring-cloud/spring-cloud-dataflow.git</code>, then the remote Git URI would be parsed as <code>ssh://git@github.com:spring-cloud/spring-cloud-dataflow.git</code>. In short, the <code>Dockerfile</code> from the remote Git repository for the app being deployed will be used (OpenShift actually clones the Git repo) as the source for the image build. Of course, you can include and customise whatever and however you like in this <code>Dockerfile</code>.</p></li>
+
+<li><p>The other strategy uses the contents of a <code>Dockerfile</code> located in one of three locations as the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#dockerfile-source">Dockerfile source</a>:</p>
+
+<ul>
+<li>The file system location of a Dockerfile indicated by the <code>spring.cloud.deployer.openshift.deployment.dockerfile</code> deployment property. E.g. <code>--properties &quot;spring.cloud.deployer.openshift.deployment.dockerfile=/tmp/deployer/Dockerfile&quot;</code>. The <em>contents</em> of this file will be used as the source input for the build.</li>
+<li>The inline Dockerfile content as provided in the <code>spring.cloud.deployer.openshift.deployment.dockerfile</code> deployment property. E.g. <code>--properties &quot;spring.cloud.deployer.openshift.deployment.dockerfile=FROM java:8\n RUN wget ...&quot;</code></li>
+<li>The default Dockerfile provided by the OpenShift deployer. This is the Dockerfile used in the example <code>http-log</code> stream above</li>
+</ul></li>
+</ul>
+
+<h2 id="taken-to-task">Taken to task</h2>
+
+<p>As mentioned in the beginning, we only focused on deploying streams to OpenShift in this post. However, in later posts we will also touch on tasks and how they are launched as jobs in OpenShift.</p>
+
+<p>Having said that, the task launching functionality is <em>fully functional</em> and supports <code>maven://</code> registered task apps in exactly the same way as their stream counterparts.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>After a brief overview of Spring Cloud Data Flow, the simple <code>http-log</code> stream demonstrated the basic functionality of the Spring Cloud Data Flow Server for OpenShift. Allowing you to register apps with both <code>docker:</code> <em>and</em> <code>maven://</code> URI&rsquo;s. In the case of the latter, the OpenShift deployer will trigger a build which, using one of the source strategies, will include the registered Maven Jar artifact in an image build. Which will then be deployed in the same way the <code>docker:</code> apps are.</p>
+
+<p>The OpenShift deployer should be <strong>considered a work in progress</strong> and lacks certain features which will be added in future commits, such as specifying container volumes and other OpenShift functionality. It also currently doesn&rsquo;t not support the scaling additions <a href="https://github.com/spring-cloud/spring-cloud-deployer-kubernetes/commit/85893355e9f1350f6b72b5240d679eac1bd8d68b">added recently</a>. Once these changes have baked for a few days they will be included.</p>
+
+<h2 id="what-s-next">What&rsquo;s Next</h2>
+
+<p>Missing features, like volumes etc. will be added and I&rsquo;ll also explore how we handle image builds and different environments using tagging. I.e. you would want to build an image in your &ldquo;dev&rdquo; environment but probably want to just tag off that image for &ldquo;uat&rdquo; etc.</p>
+
+<p>As we use Bamboo as our CI/CD server, there is also a Spring Cloud Deployer OpenShift plugin in the works. Allowing you to deploy Spring Boot apps (not necessarily stream/task definitions) into OpenShift.</p>
+
+<p><em><a href="https://github.com/donovanmuller/spring-cloud-deployer-openshift">Spring Cloud Deployer OpenShift</a> and <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift">Spring Cloud data Flow Server OpenShift</a> source code is available on GitHub.</em></p>
+
+<p><strong><a href="https://donovanmuller.blog/scdf-openshift-deploying-maven-artifacts-with-custom-dockerfile">The follow up post on how to deploy a local app with a custom Dockerfile is available here</a>.</strong></p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

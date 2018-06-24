@@ -74,10 +74,105 @@ Open Service Broker API The Open Service Broker API initiative was announced lat
     <a href="/spring-cloud-skipper-as-a-service-broker/">Read More…</a>
   </div>
   
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/http-done-three-ways-with-spring-cloud-kubernetes-on-openshift/">HTTP done three ways with Spring Cloud Kubernetes on OpenShift</a>
+  </h1>
+  <span class="post-date">Tue, May 2, 2017</span>
+  A brief look at three ways to achieve synchronous HTTP based communication between microservices in an OpenShift environment using Spring Cloud projects.
+Despite the fact that I now believe messaging based asynchronous communication between bounded contexts (in the context of DDD) is a better way for systems to communicate, there are times when a quick RESTful call is the pragmatic choice. This post takes a brief look at three ways to achieve this when deploying to an OpenShift instance.
+  
+  <div class="read-more-link">
+    <a href="/http-done-three-ways-with-spring-cloud-kubernetes-on-openshift/">Read More…</a>
+  </div>
+  
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/camel-spring-cloud-stream/">Camel Spring Cloud Stream</a>
+  </h1>
+  <span class="post-date">Fri, Jan 13, 2017</span>
+  The new Camel Spring Cloud Stream component allows you to use the programming model and binder abstractions from the Spring Cloud Stream project natively within Apache Camel.
+In this post we&rsquo;ll breeze through a simple sample application demonstrating how to use the Camel Spring Cloud Stream component.
+Introduction I&rsquo;ll let the official project page describe what Spring Cloud Stream is all about: &ldquo;Spring Cloud Stream is a framework for building message-driven microservices.
+  
+  <div class="read-more-link">
+    <a href="/camel-spring-cloud-stream/">Read More…</a>
+  </div>
+  
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/openshift-cluster-up-with-docker-for-mac/">OpenShift Cluster Up with Docker for Mac</a>
+  </h1>
+  <span class="post-date">Wed, Sep 21, 2016</span>
+  A quick step by step guide to getting a local, single node OpenShift cluster up and running with the oc CLI tools and Docker for Mac.
+The oc If you&rsquo;ve been to https://github.com/openshift/origin#openshift-application-platform latetly and gazed at the simplicity of installing a local OpenShift Origin cluster simply by typing oc cluster up, you&rsquo;ll no doubt want to try that out!
+However, the current (as of August 21st, 2016) assumption is that you need Docker Toolbox installed for this to work.
+  
+  <div class="read-more-link">
+    <a href="/openshift-cluster-up-with-docker-for-mac/">Read More…</a>
+  </div>
+  
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/scdf-openshift-deploying-maven-artifacts-with-custom-dockerfile/">SCDF OpenShift: Deploying Maven artifacts with custom Dockerfile</a>
+  </h1>
+  <span class="post-date">Mon, Jul 11, 2016</span>
+  Using Spring Cloud Data Flow Server OpenShift, we will deploy a stream to OpenShift, including a custom Spring Cloud Stream processor application deployed to a local Nexus repository with a custom Dockerfile.
+This post follows on from the introduction of Spring Cloud Data Flow Server OpenShift using Spring Cloud Deployer OpenShift. If you have not yet read the previous post, it is strongly recommended you do so.
+ Update (2017/02/19): Since this post was written, a 1.
+  
+  <div class="read-more-link">
+    <a href="/scdf-openshift-deploying-maven-artifacts-with-custom-dockerfile/">Read More…</a>
+  </div>
+  
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/spring-cloud-deployer-openshift/">Spring Cloud Deployer OpenShift</a>
+  </h1>
+  <span class="post-date">Mon, Jul 11, 2016</span>
+  A Spring Cloud Deployer SPI implementation which extends Spring Cloud Deployer Kubernetes adding support for OpenShift 3 and with that the ability to accept both Docker and Maven resources.
+ Update (2017/02/19): Since this post was written, a 1.1.0 release of the Spring Cloud Data Flow Server for OpenShift has been released. This release simplified the deployment of the server in an OpenShift environment using Templates and should be considered the recommended deployment mechanism.
+  
+  <div class="read-more-link">
+    <a href="/spring-cloud-deployer-openshift/">Read More…</a>
+  </div>
+  
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/storing-xml-natively-in-oracle-with-jpa/">Storing XML natively in Oracle with JPA</a>
+  </h1>
+  <span class="post-date">Mon, Dec 28, 2015</span>
+  Storing and querying XML from a database in an efficient way with JPA, can be somewhat of a headache. This post describes how you can can use Oracle&rsquo;s XMLType to achieve this.
+Storing XML Assuming you really really have to store the raw XML, there are a few options.
+Clobbering a seal Probably the easiest and most straightforward way, is to store the document as a String property annotated with @Lob.
+  
+  <div class="read-more-link">
+    <a href="/storing-xml-natively-in-oracle-with-jpa/">Read More…</a>
+  </div>
+  
+</div><div class="post">
+  <h1 class="post-title">
+    <a href="https://donovanmuller.blog/bamboo-and-conditional-execution-of-maven-tasks/">Bamboo and conditional execution of Maven tasks</a>
+  </h1>
+  <span class="post-date">Wed, Dec 23, 2015</span>
+  Atlassian Bamboo is a great build server, however, if you, as part of your Git feature branch development workflow come across the situation where you want to skip Maven deployment for your plan branches but currently can&rsquo;t configure that out of the box, read on&hellip;
+The problem We have some client libraries that are shared across multiple applications and we use Maven for our Java builds. These libraries are brought in via the normal Maven dependency management and therefore are deployed to an internal Nexus Maven repository.
+  
+  <div class="read-more-link">
+    <a href="/bamboo-and-conditional-execution-of-maven-tasks/">Read More…</a>
+  </div>
+  
 </div>
 </div>
     </div>
 
     
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
   </body>
 </html>

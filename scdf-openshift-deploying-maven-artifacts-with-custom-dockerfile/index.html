@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>SCDF OpenShift: Deploying Maven artifacts with custom Dockerfile &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>SCDF OpenShift: Deploying Maven artifacts with custom Dockerfile</h1>
+  <span class="post-date">Mon, Jul 11, 2016</span>
+  
+
+<p>Using Spring Cloud Data Flow Server OpenShift, we will deploy a stream to OpenShift, including a custom Spring Cloud Stream processor application deployed to a local Nexus repository with a custom Dockerfile.</p>
+
+<p>This post follows on from the introduction of Spring Cloud Data Flow Server OpenShift using Spring Cloud Deployer OpenShift. If you have not yet read the <a href="https://donovanmuller.blog/spring-cloud-deployer-openshift">previous post</a>, it is strongly recommended you do so.</p>
+
+<blockquote>
+<p><em>Update (2017/02/19)</em>: Since this post was written, a <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift/releases/tag/v1.1.0.RELEASE">1.1.0</a> release of the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift">Spring Cloud Data Flow Server for OpenShift</a> has been released. This release simplified the deployment of the server in an OpenShift environment using <a href="https://docs.openshift.org/latest/dev_guide/templates.html">Templates</a> and should be considered the <strong>recommended deployment mechanism</strong>. For more information, see the <a href="https://donovanmuller.github.io/spring-cloud-dataflow-server-openshift/docs/1.1.0.RELEASE/reference/htmlsingle#getting-started">&ldquo;Getting Started&rdquo;</a> section to deploy the server as well as the <a href="https://donovanmuller.github.io/spring-cloud-dataflow-server-openshift/docs/1.1.0.RELEASE/reference/htmlsingle/#_deploying_custom_stream_app_as_a_maven_resource">&ldquo;Deploying Custom Stream App as a Maven Resource&rdquo;</a> section in context of this post.</p>
+</blockquote>
+
+<h2 id="thumbs-and-dockerfiles">Thumbs and Dockerfiles</h2>
+
+<p>This post will introduce the &ldquo;thumbernator&rdquo; application. A Spring Cloud Stream <a href="http://docs.spring.io/spring-cloud-stream/docs/current/reference/htmlsingle/#__literal_source_literal_literal_sink_literal_and_literal_processor_literal">processor</a> that augments the incoming message on the input channel with a 👍.</p>
+
+<p>Useful? Nope, but it will help me demonstrate how you can use the OpenShift server/deployer to deploy an app built  and deployed with Maven to a local Nexus repository and which uses a custom <code>Dockerfile</code> for the image build on OpenShift.</p>
+
+<h3 id="nexus">Nexus</h3>
+
+<p>In the previous post we used the <a href="http://fabric8.io/guide/getStarted/vagrant.html">Fabric8 Vagrant box</a> for a local OpenShift instance. Conveniently, this configuration also includes a running <a href="http://www.sonatype.org/nexus/">Nexus</a> instance. It is deployed under the <code>default</code> project/namespace and has a Route of <a href="http://nexus.vagrant.f8">http://nexus.vagrant.f8</a>.</p>
+
+<p>To simulate as closely as possible a &ldquo;real&rdquo; development environment (and to show the server/deployer&rsquo;s support for remote repository authentication), we will add some security to our Nexus instance. Go to <a href="http://nexus.vagrant.f8">http://nexus.vagrant.f8</a> and login with <code>admin</code>/<code>admin123</code>. Now open the &ldquo;<em>Security</em>&rdquo; accordion and select &ldquo;<em>Users</em>&rdquo;. Right click on the &ldquo;<em>deployment</em>&rdquo; user and &ldquo;<em>Set Password</em>&rdquo; to <code>password</code>.</p>
+
+<p><img src="nexus-security.png" alt="" /></p>
+
+<p>Granted, this isn&rsquo;t the most secure Nexus repo you&rsquo;ll ever encounter but it&rsquo;s ok for now. Besides, the Nexus instance is ephemeral and all your config will be blown away if you bounce your Vagrant VM.</p>
+
+<p>Next we get a little ahead of ourselves and add a proxy repository for the Spring Snapshots repository. We will need this later. Hit Repositories and click &ldquo;<em>Add</em>&rdquo; then &ldquo;<em>Proxy Repository</em>&rdquo;. Fill out the form as below:</p>
+
+<p><img src="add-spring-repo-1.png" alt="" /></p>
+
+<p>Make sure you choose the &ldquo;<em>Snapshot</em>&rdquo; <code>Repository Policy</code> and a <code>Remote Storage Location</code> as &ldquo;<em><a href="http://repo.spring.io/snapshot">http://repo.spring.io/snapshot</a></em>&rdquo;. Hit &ldquo;<em>Save</em>&rdquo; and your proxy record should become active. Now we just need to add it to the <code>Public Repositories</code> group, right click that repository and move the <code>Spring Snapshots</code> repo into the <code>Ordered Group Repositories</code> list on the left:</p>
+
+<p><img src="add-public-group-1.png" alt="" /></p>
+
+<p>Ultimately this allows us to resolve Spring Cloud Stream Starter Apps (like the Http and Log OOTB applications) as well as our locally deployed apps through the same <code>http://nexus.vagrant.f8/content/groups/public</code> remote repository URL.</p>
+
+<h3 id="clone-build-and-dee-ploy">Clone, build and dee ploy</h3>
+
+<p>Now that our Maven repository is primed, we can deploy our thumbernator application to it.
+First clone the source from GitHub:</p>
+
+<pre><code>$ git clone https://github.com/donovanmuller/thumbernator.git
+</code></pre>
+
+<p>Thanks to the pre-configured <code>.settings.xml</code> in the root of the project, you don&rsquo;t need to do anything to deploy the app to our local repo, well, except actually deploying it with:</p>
+
+<pre><code>$ cd thumbernator
+$ ./mvnw -s .settings.xml deploy
+</code></pre>
+
+<p>You should get a <code>BUILD SUCCESS</code> and our thumbernator app successfully deployed:</p>
+
+<p><img src="deployed.png" alt="" /></p>
+
+<h2 id="boot-ing-up-the-server">Boot&rsquo;ing up the server</h2>
+
+<p>Our app is ready to go, so now we need to start up Spring Cloud Data Flow Server OpenShift (mouthful, isn&rsquo;t it):</p>
+
+<p><em>Please see the <a href="https://donovanmuller.blog/spring-cloud-deployer-openshift/#deployingasimplestream">previous post</a> on the steps required to build the prerequisite projects and the spring-cloud-dataflow-server-openshift project.</em></p>
+
+<pre><code>$ cd spring-cloud-dataflow-server-openshift/target
+$ java -Dopenshift.url=https://172.28.128.4:8443 \
+  -Dkubernetes.master=https://172.28.128.4:8443 \
+  -Dkubernetes.trust.certificates=true \
+  -Dkubernetes.auth.basic.username=admin \
+  -Dkubernetes.auth.basic.password=admin \
+  -jar spring-cloud-dataflow-server-openshift-1.0.0.BUILD-SNAPSHOT.jar \
+  --spring.cloud.deployer.kubernetes.namespace=scdf-apps \
+  --maven.resolvePom=true \
+  --maven.remote-repositories.nexus.url=http://nexus.vagrant.f8/content/groups/public \
+  --maven.remote-repositories.nexus.auth.username=deployment \
+  --maven.remote-repositories.nexus.auth.password=password \
+  --maven.requestTimeout=1800000
+</code></pre>
+
+<p>Note the few extra options this time around. The <code>maven.remote-repositories.nexus.</code> family of properties now point to our local Nexus repository and include the authentication details. We also set the <code>maven.requestTimeout</code> property, which gives our Nexus repository some extra time to download the Spring Stream Starter Apps from <a href="http://repo.spring.io/snapshot">http://repo.spring.io/snapshot</a>. Depending on your bandwidth, it could take too long to download these artifacts the first time around and cause your Build to fail with <code>504 GATEWAY TIMEOUT</code> errors.</p>
+
+<h2 id="thumbs-away">Thumbs away</h2>
+
+<p>Almost there. Next let&rsquo;s fire up the Spring Cloud Data Flow Shell and register the apps we&rsquo;ll use in our stream:</p>
+
+<pre><code>$ java -jar spring-cloud-dataflow-shell-1.0.0.BUILD-SNAPSHOT.jar
+...
+
+dataflow:&gt;app register --name http --type source --uri maven://org.springframework.cloud.stream.app:http-source-kafka:1.0.0.BUILD-SNAPSHOT
+Successfully registered application 'source:http'
+
+dataflow:&gt;app register --name thumb --type processor --uri maven://io.switchbit:thumbernator:1.0.0.BUILD-SNAPSHOT
+Successfully registered application 'processor:thumb'
+
+dataflow:&gt;app register --name log --type sink --uri maven://org.springframework.cloud.stream.app:log-sink-kafka:1.0.0.BUILD-SNAPSHOT
+Successfully registered application 'sink:log'
+</code></pre>
+
+<p>Note the thumbernator app registered as a <code>processor</code>. Also note that we register the OOTB <code>http</code> and <code>log</code> apps using their Spring Snapshot repository URI&rsquo;s (e.g. <code>org.springframework.cloud.stream.app:http-source-kafka:1.0.0.BUILD-SNAPSHOT</code>). This is where the previous step of configuring a <code>Spring Snapshots</code> proxy repository in Nexus becomes quite important. Currently, the OpenShift deployer only supports a single remote Maven repository (with <code>--maven.remote-repositories.</code>). This being the case, the deployer would not be able to resolve the BUILD-SNAPSHOT builds of the OOTB apps <em>and</em> our thumbernator artifact, if it were not for our proxy repository and the <code>Public Repositories</code> group configured in Nexus.</p>
+
+<p>Next let&rsquo;s define our stream:</p>
+
+<pre><code>dataflow:&gt;stream create --name http-thumb-log --definition &quot;http | thumb | log&quot;
+Created new stream 'http-thumb-log'
+</code></pre>
+
+<p><em>The stream definition, Http and Log apps are described in more detail in the <a href="https://donovanmuller.blog/spring-cloud-deployer-openshift">previous post</a>. Please <a href="https://donovanmuller.blog/spring-cloud-deployer-openshift/#astreamdefined">read that post</a> first if you are not sure what is going on here.</em></p>
+
+<p>Straightforward, we&rsquo;ll accept an HTTP POST, send that to the thumbernator and then log the output (or input, depending on your viewpoint).</p>
+
+<p>Finally, let&rsquo;s deploy our stream:</p>
+
+<pre><code>dataflow:&gt;stream deploy http-thumb-log
+Deployed stream 'http-thumb-log'
+</code></pre>
+
+<p>Great! Our stream is deployed and we&rsquo;re ready to pull finger&hellip;</p>
+
+<p><img src="build-failed.png" alt="" /></p>
+
+<p>no, no wait. Our thumbernator app failed to build.
+But why?</p>
+
+<p><img src="build-failure-reason.png" alt="" /></p>
+
+<p><em>It goes without saying that you will not be able to clone the thumbernator app from my repo, unless you get hold of my private key, which I hope you don&rsquo;t. However, you could push the thumbernator app to your own GitHub (or even Bitbucket) account and replace the repository references where applicable.</em></p>
+
+<p>Hmm, looks like we couldn&rsquo;t authenticate when trying to clone the source from GitHub. Darn.</p>
+
+<p>Wait&hellip; what is actually going on here? Why is it trying to clone from GitHub when the artifact is in Nexus?</p>
+
+<h2 id="custom-dockerfile-builds">Custom Dockerfile builds</h2>
+
+<p>To answer that, we need to cast our mind back to the previous post, to the part describing how <a href="https://donovanmuller.blog/spring-cloud-deployer-openshift/#dockerfileresolution">Dockerfile resolution works</a>. In particular, the second point is relevant here:</p>
+
+<blockquote>
+<p>If <code>src/main/docker/Dockerfile</code> is detected in the Maven artifact Jar, then it is assumed that the <code>Dockerfile</code> will exist in that location in a remote Git repository. In that case, the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#source-code">Git repository source</a> is used in conjunction with the Docker build strategy. The remote Git URI and ref are extracted from the <code>&lt;scm&gt;&lt;connection&gt;&lt;/connection&gt;&lt;/scm&gt;</code> and <code>&lt;scm&gt;&lt;tag&gt;&lt;/tag&gt;&lt;/scm&gt;</code> tags in the <code>pom.xml</code> (if available) of the Maven Jar artifact. For example, if the <code>&lt;scm&gt;&lt;connection&gt;</code> value was <code>scm:git:git@github.com:spring-cloud/spring-cloud-dataflow.git</code>, then the remote Git URI would be parsed as <code>ssh://git@github.com:spring-cloud/spring-cloud-dataflow.git</code>. In short, <strong>the <code>Dockerfile</code> from the remote Git repository for the app being deployed will be used (OpenShift actually clones the Git repo) as the source for the image build.</strong> Of course, you can include and customise whatever and however you like in this <code>Dockerfile</code>.</p>
+</blockquote>
+
+<p>If you look at the thumbernator project on GitHub, there is indeed a <a href="https://github.com/donovanmuller/thumbernator/tree/master/src/main/docker"><code>src/main/docker/Dockerfile</code></a>. Which means the <code>&lt;scm&gt;&lt;connection&gt;</code> value was extracted from the <a href="https://github.com/donovanmuller/thumbernator/blob/master/pom.xml#L18"><code>pom.xml</code></a> and used as the Git URI for the <a href="https://docs.openshift.org/latest/dev_guide/builds.html#source-code">Git repository source</a> for the OpenShift build.</p>
+
+<p>Urm ok, so what. Well the whole point of this is so that we can use a custom <code>Dockerfile</code> to build our app. If you look at the <a href="https://github.com/donovanmuller/thumbernator/blob/master/src/main/docker/Dockerfile"><code>Dockerfile</code></a> for the thumbernator app:</p>
+
+<pre><code>FROM java:8
+
+VOLUME /tmp
+ADD entrypoint.sh /entrypoint.sh
+RUN bash -c 'chmod a+rx /entrypoint.sh'
+
+ENTRYPOINT [&quot;/entrypoint.sh&quot;]
+
+RUN wget --quiet --user ${repo_auth_username} \
+  --password ${repo_auth_password} \
+  --content-disposition \
+  -O /app.jar \
+  &quot;http://nexus.vagrant.f8/service/local/artifact/maven/redirect?r=public&amp;g=${app_groupId}&amp;a=${app_artifactId}&amp;v=${app_version}&quot;
+
+RUN bash -c 'chmod a+rx /app.jar'
+</code></pre>
+
+<p>you can see it is slightly different to the default <a href="https://github.com/donovanmuller/spring-cloud-deployer-openshift/blob/master/src/main/resources/Dockerfile"><code>Dockerfile</code></a> provided by the OpenShift deployer.</p>
+
+<p>For one, it is copying in a script (<a href="https://github.com/donovanmuller/thumbernator/blob/master/src/main/docker/entrypoint.sh">entrypoint.sh</a>) as the entrypoint. Second, it is using a <a href="https://repository.sonatype.org/nexus-restlet1x-plugin/default/docs/path__artifact_maven_redirect.html">Nexus API</a> call to download the Maven artifact Jar. This is actually quite important because the default <code>Dockerfile</code> provided by the deployer will not work with a Nexus repository, like it works for the <a href="https://repo.spring.io/snapshot/">Spring repo&rsquo;s</a>, which use <a href="https://www.jfrog.com/open-source/">Artifactory</a>.</p>
+
+<p>In other words, this is how you can use your own crafted <code>Dockerfile</code> instead of the default or having to specify a <code>Dockerfile</code> inline as per the other resolution options.</p>
+
+<h3 id="shhh-it-s-a-secret">Shhh, it&rsquo;s a secret</h3>
+
+<p>Now we know the why, we need to solve the how.
+How do we provide a private key for Git to use when cloning a remote repository?</p>
+
+<p>Well, that&rsquo;s pretty easy. It&rsquo;s a <a href="https://docs.openshift.org/latest/dev_guide/builds.html#ssh-key-authentication">secret</a>. No, really. We just need to create a SSH auth secret in OpenShift and reference that when kicking off the build.</p>
+
+<p>For this post I&rsquo;m just going to copy a private key associated with my GitHub account, from my machine to the <code>/vagrant</code> share (the Vagrantfile location on <em>your</em> machine) and then create the secret using the <code>oc</code> CLI tool in a SSH session on the Vagrant VM.</p>
+
+<p>*This is probably not the best thing to do security wise so please <strong>take caution</strong> when copying your private key around.*</p>
+
+<pre><code>$ cp ~/.ssh/id_rsa_github &lt;your fabcric8 clone&gt;/fabric8-installer/vagrant/openshift
+$ vagrant ssh
+[vagrant@vagrant ~]$ oc secrets new-sshauth github-ssh-secret --ssh-privatekey=/vagrant/id_rsa_github
+secret/github-ssh-secret
+</code></pre>
+
+<p>Now we just need to undeploy our current <code>http-thumb-log</code> stream definition and recreate it indicating the source secret to use:</p>
+
+<pre><code>dataflow:&gt;stream undeploy http-thumb-log
+Un-deployed stream 'http-thumb-log'
+dataflow:&gt;stream deploy http-thumb-log --properties &quot;app.thumb.spring.cloud.deployer.openshift.build.git.secret=github-ssh-secret,app.http.spring.cloud.deployer.openshift.createRoute=true,app.http.spring.cloud.deployer.openshift.deployment.route.host=http.vagrant.f8&quot;
+Deployed stream 'http-thumb-log'
+</code></pre>
+
+<p>Note the deployment property <code>app.thumb.spring.cloud.deployer.openshift.build.git.secret=github-ssh-secret</code> which indicates that the <code>thumb</code> app should include the &ldquo;github-ssh-secret&rdquo; source secret.</p>
+
+<p>The <code>http</code> and <code>log</code> apps built successfully last time, so they don&rsquo;t get another build but rather just get deployed using the existing image. Our <code>thumb</code> build can now clone our source, using SSH authentication to GitHub with our &ldquo;github-ssh-secret&rdquo; secret.</p>
+
+<p><em>The current implementation only supports cloning a remote repository using the ssh:// scheme. HTTPS support will be added in future.</em></p>
+
+<h2 id="thumbs-up">Thumbs up</h2>
+
+<p>Our build should now complete successfully and start up our <code>thumb</code> app:</p>
+
+<p><img src="thumb-app-starting.png" alt="" /></p>
+
+<p>We can see our custom <code>entrypoint.sh</code> script starting the app and how about that banner! 😃</p>
+
+<p>Also note the command line arguments passed to the Spring Boot app (<code>--spring.cloud.stream.bindings.xxx</code>). The binder input/output destinations are built and provided by the Data Flow Server when the definition was parsed. This is the beauty of this platform, there is no magic, nothing you couldn&rsquo;t do yourself, just a well thought out implementation. I would add a thumbs up emoji right about now but I think we&rsquo;ve got enough of those. So 👏</p>
+
+<p>Let&rsquo;s test this stream out by pointing a HTTP request at it and see what happens:</p>
+
+<pre><code>dataflow:&gt;http post --data &quot;OpenShift liked this!&quot; --target http://http.vagrant.f8/
+&gt; POST (text/plain;Charset=UTF-8) http://http.vagrant.f8/ OpenShift liked this!
+&gt; 202 ACCEPTED
+</code></pre>
+
+<p>and if we check the <code>log</code> apps, urm, log:</p>
+
+<p><img src="thumb-log.png" alt="" /></p>
+
+<p>there it is. Considered yourself 👍&rsquo;d.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Our pointless (but awesome) thumbernator app demonstrated how we can resolve local apps deployed to a Nexus repository and how we can implement a custom <code>Dockerfile</code> for the OpenShift build kicked off by the OpenShift deployer.</p>
+
+<p>This functionality is must in a &ldquo;real&rdquo; environment, where the default <code>Dockerfile</code> might not suffice.</p>
+
+<p>The thumbernator app can be found on GitHub: <a href="https://github.com/donovanmuller/thumbernator">https://github.com/donovanmuller/thumbernator</a></p>
+
+<h2 id="what-s-next">What&rsquo;s Next</h2>
+
+<p>Whilst using the Shell (or <a href="http://localhost:9393/dashboard/index.html">UI</a>) to create and deploy stream/task definitions is convenient, it&rsquo;s probably not going to scale to deploying in teams etc.</p>
+
+<p>Next up will be a <a href="https://www.atlassian.com/software/bamboo">Bamboo</a> plugin that will enable deployment of stream/task definitions and even stand alone Boot apps (the deployer is actually not coupled to Data Flow at all).</p>
+
+<p>👍</p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

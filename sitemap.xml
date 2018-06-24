@@ -8,6 +8,41 @@
   </url>
   
   <url>
+    <loc>https://donovanmuller.blog/http-done-three-ways-with-spring-cloud-kubernetes-on-openshift/</loc>
+    <lastmod>2017-05-02T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/camel-spring-cloud-stream/</loc>
+    <lastmod>2017-01-13T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/openshift-cluster-up-with-docker-for-mac/</loc>
+    <lastmod>2016-09-21T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/scdf-openshift-deploying-maven-artifacts-with-custom-dockerfile/</loc>
+    <lastmod>2016-07-11T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/spring-cloud-deployer-openshift/</loc>
+    <lastmod>2016-07-11T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/storing-xml-natively-in-oracle-with-jpa/</loc>
+    <lastmod>2015-12-28T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/bamboo-and-conditional-execution-of-maven-tasks/</loc>
+    <lastmod>2015-12-23T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://donovanmuller.blog/categories/</loc>
     <priority>0</priority>
   </url>

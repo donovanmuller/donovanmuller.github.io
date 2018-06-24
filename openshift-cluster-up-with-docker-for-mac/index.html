@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>OpenShift Cluster Up with Docker for Mac &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>OpenShift Cluster Up with Docker for Mac</h1>
+  <span class="post-date">Wed, Sep 21, 2016</span>
+  
+
+<p>A quick step by step guide to getting a local, single node OpenShift cluster up and running with the <code>oc</code> CLI tools and Docker for Mac.</p>
+
+<h2 id="the-oc">The <code>oc</code></h2>
+
+<p>If you&rsquo;ve been to <a href="https://github.com/openshift/origin#openshift-application-platform">https://github.com/openshift/origin#openshift-application-platform</a> latetly and gazed at the simplicity of installing a local OpenShift Origin cluster simply by typing <code>oc cluster up</code>, you&rsquo;ll no doubt want to try that out!</p>
+
+<p>However, the current (as of August 21st, 2016) assumption is that you need <a href="https://www.docker.com/products/docker-toolbox">Docker Toolbox</a> installed for this to work. Only thing is, if you like living on the bleeding edge, you&rsquo;ll no doubt be running <a href="https://www.docker.com/products/docker#/mac">Docker for Mac</a>.</p>
+
+<p>So can we still use <code>oc cluster up</code>? Yes, yes you can.</p>
+
+<h3 id="installing">Installing</h3>
+
+<p>I use <a href="http://brew.sh/">Homebrew</a> for installing apps on Mac, so I will explain how to get the <code>oc</code> CLI installed using <code>brew</code>. First you need to install the <a href="https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Formula-Cookbook.md#devel"><em>unstable</em></a> version of <code>oc</code>, which at the time of writing is <code>1.3.0-alpha.3</code> (thanks to <a href="https://github.com/Homebrew/homebrew-core/pull/3844">elyscape</a>), with:</p>
+
+<pre><code>$ brew update
+$ brew install --devel openshift-cli
+</code></pre>
+
+<p>this will install the <code>go</code> dependency if you don&rsquo;t have it already, pull the OpenShift source from GitHub and build the binaries.</p>
+
+<p>You should now have <code>oc</code> on your path:</p>
+
+<pre><code>$ oc version
+oc v1.3.0-alpha.3
+kubernetes v1.3.0+507d3a7
+features: Basic-Auth
+</code></pre>
+
+<h2 id="cluster-up">Cluster Up</h2>
+
+<p>Making sure you&rsquo;re Docker for Mac whale is snuggly nestled in your menu bar (I.e. Docker is running), execute the following:</p>
+
+<pre><code>$ oc cluster up
+</code></pre>
+
+<p>after some Docker image pulling, you will be greeted with this:</p>
+
+<pre><code>-- Checking OpenShift client ... OK
+-- Checking Docker client ... OK
+-- Checking for existing OpenShift container ... OK
+-- Checking for openshift/origin:v1.3.0-alpha.3 image ...
+   Pulling image openshift/origin:v1.3.0-alpha.3
+
+...
+
+   Pulled 3/3 layers, 100% complete
+   Extracting
+   Image pull complete
+-- Checking Docker daemon configuration ... FAIL
+   Error: did not detect an --insecure-registry argument on the Docker daemon
+   Solution:
+
+     Ensure that the Docker daemon is running with the following argument:
+       	--insecure-registry 172.30.0.0/16
+
+     You can run this command with --create-machine to create a machine with the
+     right argument.
+</code></pre>
+
+<h3 id="feeling-a-little-insecure">Feeling a little insecure</h3>
+
+<p>Luckily adding <code>172.30.0.0/16</code> to the insecure registries for our Docker daemon is as easy as ever. Click the whale, hit &ldquo;<em>Preferences</em>&ldquo;:</p>
+
+<p><img src="docker-pref-1.png" alt="" /></p>
+
+<p>then add <code>172.30.0.0/16</code> to the insecure registries section under the &ldquo;<em>Advanced</em>&rdquo; tab:</p>
+
+<p><img src="docker-insecure-1.png" alt="" /></p>
+
+<p>hit &ldquo;<em>Apply and Restart</em>&rdquo; and wait for the Docker daemon to restart.</p>
+
+<h3 id="missing-cat">Missing cat</h3>
+
+<p>Good to go, let&rsquo;s try again:</p>
+
+<pre><code>$ oc cluster up
+-- Checking OpenShift client ... OK
+-- Checking Docker client ... OK
+-- Checking for existing OpenShift container ... OK
+-- Checking for openshift/origin:v1.3.0-alpha.3 image ... OK
+-- Checking Docker daemon configuration ... OK
+-- Checking for available ports ... OK
+-- Checking type of volume mount ...
+   Using Docker shared volumes for OpenShift volumes
+-- Checking Docker version ... OK
+-- Creating host directories ... OK
+-- Finding server IP ..
+   Using 192.168.1.3 as the server IP
+-- Starting OpenShift container ... FAIL
+   Error: exec: &quot;socat&quot;: executable file not found in $PATH
+</code></pre>
+
+<h4 id="update-2016-08-31"><em>Update - 2016-08-31</em></h4>
+
+<p>The missing <code>socat</code> error below should be fixed with <a href="https://github.com/Homebrew/homebrew-core/commit/7af538b36003fff29335585f0c734b7b90b6ec78">this commit</a> to the <code>openshift-cli</code> formula. The commit adds <code>socat</code> as a dependency and therefore <code>socat</code> will be installed as part of the <code>openshift-cli</code> install.</p>
+
+<p><del>So close! Apparently we need <a href="http://www.dest-unreach.org/socat/"><code>socat</code></a> though. No worries, simply install with <code>brew</code>:</del></p>
+
+<pre><code># don't need this anymore, see update ^
+$ brew install socat
+</code></pre>
+
+<p>Let&rsquo;s give it one more try:</p>
+
+<pre><code>oc cluster up
+-- Checking OpenShift client ... OK
+-- Checking Docker client ... OK
+-- Checking for existing OpenShift container ... OK
+-- Checking for openshift/origin:v1.3.0-alpha.3 image ... OK
+-- Checking Docker daemon configuration ... OK
+-- Checking for available ports ... OK
+-- Checking type of volume mount ...
+   Using Docker shared volumes for OpenShift volumes
+-- Checking Docker version ... OK
+-- Creating host directories ... OK
+-- Finding server IP ...
+   Using 192.168.1.3 as the server IP
+-- Starting OpenShift container ...
+   Creating initial OpenShift configuration
+   Starting OpenShift using container 'origin'
+   Waiting for API server to start listening
+   OpenShift server started
+-- Installing registry ... OK
+-- Installing router ... OK
+-- Importing image streams ... OK
+-- Importing templates ... OK
+-- Login to server ... OK
+-- Creating initial project &quot;myproject&quot; ... OK
+-- Server Information ...
+   OpenShift server started.
+   The server is accessible via web console at:
+       https://192.168.1.3:8443
+
+   You are logged in as:
+       User:     developer
+       Password: developer
+
+   To login as administrator:
+       oc login -u system:admin
+</code></pre>
+
+<p>and there we have it, an OpenShift Origin cluster up and running.</p>
+
+<p>You should be able to hit the OpenShift console at: <a href="https://localhost:8443/console/">https://localhost:8443/console/</a> * using the username and password <code>developer</code> to login.</p>
+
+<p>** or whatever server IP was designated when starting up. In my example above it would be <code>192.168.1.3</code>*</p>
+
+<p><img src="openshift-console.png" alt="" /></p>
+
+<h2 id="i-need-more-power">I need more power</h2>
+
+<p>By default the <code>developer</code> user does not have cluster administration rights. Which is why we only see the one project <code>My Project</code>.</p>
+
+<p>A developer needs admin rights, so let&rsquo;s give it to him using the <code>oadm</code>/<code>oc adm</code> tool:</p>
+
+<blockquote>
+<p>If for some reason the <code>oadm</code> binary is not on your <code>$PATH</code>, you can also use <code>oc adm</code> which has identical functionality. Thanks to Matthias Lübken (<a href="https://twitter.com/luebken">@luebken</a>) for the <a href="https://twitter.com/luebken/status/771724821562523648">suggestion</a>.</p>
+</blockquote>
+
+<pre><code>$ oc login -u system:admin
+$ oadm policy add-cluster-role-to-user cluster-admin developer
+$ -- OR --
+$ oc adm policy add-cluster-role-to-user cluster-admin developer
+</code></pre>
+
+<p>First we login with the <code>admin</code> user which has  the correct privileges to grant the <code>cluster-admin</code> role and then add that role to <code>developer</code>. Now you should see all the projects and be able to poke around a bit:</p>
+
+<p><img src="openshift-all.png" alt="" /></p>
+
+<h2 id="finally">Finally</h2>
+
+<p>That&rsquo;s it, have fun&hellip;
+When you&rsquo;re done, don&rsquo;t forget to <code>oc cluster down</code>.</p>
+
+<p>This guide has been tested with these versions of Docker for Mac (1.12.0), <code>oc</code> (v1.3.0-alpha.3) and OSX El Capitan (10.11.6).</p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

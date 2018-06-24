@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Storing XML natively in Oracle with JPA &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>Storing XML natively in Oracle with JPA</h1>
+  <span class="post-date">Mon, Dec 28, 2015</span>
+  
+
+<p>Storing <em>and</em> querying XML from a database in an efficient way with JPA, can be somewhat of a headache. This post describes how you can can use Oracle&rsquo;s XMLType to achieve this.</p>
+
+<h2 id="storing-xml">Storing XML</h2>
+
+<p>Assuming you really really have to store the raw XML, there are a few options.</p>
+
+<h3 id="clobbering-a-seal">Clobbering a seal</h3>
+
+<p>Probably the easiest and most straightforward way, is to store the document as a <code>String</code> property annotated with <code>@Lob</code>. With this option you would just marshal the XML document to a <code>String</code> and save this as a CLOB type database column, potentially with other columns/properties related to this document and saving these along with the document in a single table/entity. Retrieving the document is equally as simple, given the <code>String</code> property containing the XML document, simply unmarshal this property to the correct XML document.</p>
+
+<p>Let&rsquo;s demonstrate the above with some code describing our XML document as JAXB classes and then how we would marshal and unmarshal to/from the XML format in a JPA entity. We&rsquo;ll use Spring Boot to illustrate this.</p>
+
+<p><em>The complete code for this post is available on GitHub <a href="https://github.com/switchbitio/xmltype-jpa">here</a></em></p>
+
+<p><code>Order.java</code></p>
+
+<pre><code>@XmlRootElement
+public class Order {
+
+    private String customer;
+
+    @XmlElement(name = &quot;orderItem&quot;)
+    private List&lt;OrderItem&gt; orderItems = new ArrayList&lt;&gt;();
+
+    ...
+
+    public void addOrderItem(final OrderItem orderItem) {
+        this.orderItems.add(orderItem);
+    }
+}
+</code></pre>
+
+<p><code>OrderItem.java</code></p>
+
+<pre><code>public class OrderItem {
+
+    private String sku;
+    private Double price;
+
+    ...
+}
+</code></pre>
+
+<p>and our JPA entity, persisted with the help of Spring Data JPA looks like this:</p>
+
+<p><code>OrderEntity.java</code></p>
+
+<pre><code>@Entity(name = &quot;t_order&quot;)
+public class OrderEntity {
+
+    public static final String NAME = &quot;t_order&quot;;
+    public static final String SEQUENCE_NAME = NAME + &quot;_seq&quot;;
+
+    @Id
+    @GeneratedValue(generator = SEQUENCE_NAME, strategy = SEQUENCE)
+    @SequenceGenerator(name = SEQUENCE_NAME, sequenceName = SEQUENCE_NAME)
+    private Long id;
+
+    private String customer;
+
+    @Lob
+    private String orderXml;
+
+    ...
+</code></pre>
+
+<p>the sequence on our identity property is actually more for Oracle, which we&rsquo;ll introduce later.</p>
+
+<p>To place the <code>Order</code> we have a RESTful resource that accepts the order XML as a POST body. Spring Boot&rsquo;s <a href="https://github.com/spring-projects/spring-boot/blob/master/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure/web/HttpMessageConverters.java#L193">auto configured</a> <code>Jaxb2RootElementHttpMessageConverter</code> will automatically convert the body to our <code>Order</code> JAXB structure. Below is our controller and app, Spring Data JPA repository interface left out for brevity.</p>
+
+<p><code>Application.java</code></p>
+
+<pre><code>@SpringBootApplication
+@RestController
+public class Application {
+
+    @Autowired
+    private OrderEntityRepository orderEntityRepository;
+
+    @RequestMapping(value = &quot;/orders&quot;, method = POST, consumes = APPLICATION_XML_VALUE)
+    public OrderEntity placeOrder(@RequestBody final Order order) {
+        StringWriter orderXml = new StringWriter();
+        JAXB.marshal(order, orderXml);
+
+        return orderEntityRepository.save(new OrderEntity(order.getCustomer(), orderXml.toString()));
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+</code></pre>
+
+<p>After starting the app, you can test persisting our entity with:</p>
+
+<pre><code>$ curl -X POST --header &quot;Content-Type: application/xml&quot; --header &quot;Accept: */*&quot; -d &quot;
+dquote&gt; &lt;order&gt;
+dquote&gt;     &lt;customer&gt;Bob Smith&lt;/customer&gt;
+dquote&gt;     &lt;orderItem&gt;
+dquote&gt;         &lt;sku&gt;SB123&lt;/sku&gt;
+dquote&gt;         &lt;price&gt;99.99&lt;/price&gt;
+dquote&gt;     &lt;/orderItem&gt;
+dquote&gt;     &lt;orderItem&gt;
+dquote&gt;         &lt;sku&gt;SB456&lt;/sku&gt;
+dquote&gt;         &lt;price&gt;44.44&lt;/price&gt;
+dquote&gt;     &lt;/orderItem&gt;
+dquote&gt; &lt;/order&gt;
+dquote&gt; &quot; &quot;http://localhost:8080/orders&quot;
+</code></pre>
+
+<p>Unmarshalling our XML document from the <code>orderXml</code> property&rsquo;s value would be a similar affair.</p>
+
+<p>Quite simple then, however, the problem with this option is that you cannot query the XML document easily. For example, you cannot query all records from the aforementioned table where some tag in the document equals X. Instead, as part of your app design, you would have identify which tags in your document might be queried and then extract those into their own columns (like the <code>customer</code> property above), allowing you to include them in your queries. Alternatively, in a worst case scenario, you would have to do a <code>select *</code>, unmarshal the document from each record and then filter with xpath etc. Pretty nasty stuff.</p>
+
+<h3 id="you-seek-the-oracle">You seek the Oracle</h3>
+
+<p>If you work in a corporate that uses Oracle, the above scenario can be handled a little more efficiently with the XMLType data type in conjunction with the Oracle XML DB related stack. More information <a href="http://docs.oracle.com/database/121/ADXDB/xdb01int.htm#ADXDB3970">here</a></p>
+
+<p>Basically, the Oracle XML DB related technologies bring the benefits of the relational world to the XML world. Allowing you to query the XML document as you would in the relational world with similar performance and features.</p>
+
+<p>So, need to store your XML data in its native form?
+Using Oracle as your database engine?
+XMLType with Oracle XML DB it is!</p>
+
+<h2 id="life-s-too-short-that-s-not-a-prediction">Life&rsquo;s too short. That&rsquo;s not a prediction.</h2>
+
+<p>Wouldn&rsquo;t it be great if we could just set our JAXB instance directly on our entity and have all the gory details of persisting it to an Oracle XMLType column done for us? Well, that&rsquo;s exactly what we&rsquo;re going to do.</p>
+
+<p>Let&rsquo;s start out by just, believing&hellip;
+Change our entity to reference the actual <code>Order</code>:</p>
+
+<p><code>OrderEntity.java</code></p>
+
+<pre><code>@Entity(name = &quot;t_order&quot;)
+public class OrderEntity {
+
+    public static final String NAME = &quot;t_order&quot;;
+    public static final String SEQUENCE_NAME = NAME + &quot;_seq&quot;;
+
+    @Id
+    @GeneratedValue(generator = SEQUENCE_NAME, strategy = SEQUENCE)
+    @SequenceGenerator(name = SEQUENCE_NAME, sequenceName = SEQUENCE_NAME)
+    private Long id;
+
+    private String customer;
+
+    @Column(name = &quot;order_xml&quot;)
+    private Order order;
+
+    ...
+</code></pre>
+
+<p>and our controller accordingly:</p>
+
+<p><code>Application.java</code></p>
+
+<pre><code>@SpringBootApplication
+@RestController
+public class Application {
+
+    @Autowired
+    private OrderEntityRepository orderEntityRepository;
+
+    @RequestMapping(value = &quot;/orders&quot;, method = POST, consumes = APPLICATION_XML_VALUE)
+    public OrderEntity placeOrder(@RequestBody final Order order) {
+        StringWriter orderXml = new StringWriter();
+        JAXB.marshal(order, orderXml);
+
+        return orderEntityRepository.save(new OrderEntity(order));
+    }
+
+    ...
+}
+</code></pre>
+
+<p>fire up our app and&hellip; it puked up a steaming stack trace with the following remnant of a carrot:</p>
+
+<pre><code>...
+Caused by: org.hibernate.MappingException: Could not determine type for: io.switchbit.domain.Order, at table: order_entity, for columns: [org.hibernate.mapping.Column(order)]
+</code></pre>
+
+<p>Hibernate, the default ORM used by Spring Data JPA apparently does not know how to handle or map our <code>Order</code> class to a database column. Fair enough. So we&rsquo;ll just have to tell Hibernate how we&rsquo;d like this type handled. We can do this by specifying our own <code>org.hibernate.usertype.UserType</code>.</p>
+
+<p>Since we&rsquo;re starting to implement an Oracle specific feature, we must bring in the Oracle JDBC/XDB dependencies at this point. The exact dependencies and versions might differ from the below but be sure to use the corresponding versions and names for <em>your</em> Oracle installation. Below is a snippet of just the Oracle dependencies, you can view the complete <code>pom.xml</code> <a href="https://github.com/switchbitio/xmltype-jpa/blob/master/pom.xml">here</a></p>
+
+<p><code>pom.xml</code></p>
+
+<pre><code>        ...
+
+        &lt;!-- Oracle JDBC --&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.oracle&lt;/groupId&gt;
+            &lt;artifactId&gt;ojdbc6&lt;/artifactId&gt;
+            &lt;version&gt;12.1.0.1&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.oracle&lt;/groupId&gt;
+            &lt;artifactId&gt;xdb6&lt;/artifactId&gt;
+            &lt;version&gt;11.2.0.3.0&lt;/version&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.oracle&lt;/groupId&gt;
+            &lt;artifactId&gt;xmlparserv2&lt;/artifactId&gt;
+            &lt;version&gt;11.1.1.2.0&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+</code></pre>
+
+<p><strong>Note:</strong> Since the Oracle JDBC/XDB jars are not publicly available, you will have to source the jars for these dependencies from your own Oracle installation. You can then install them into your local Maven repo or install into your companies Maven repo of choice (Sonatype Nexus, etc.)</p>
+
+<p>Oracle dependencies sorted, now for our very own <code>OrderUserType</code></p>
+
+<p><code>OrderUserType.java</code></p>
+
+<pre><code>public class OrderUserType implements UserType {
+
+    private static JAXBContext jaxbContext;
+    private Marshaller marshaller;
+    private Unmarshaller unmarshaller;
+
+    {
+       jaxbContext = JAXBContext.newInstance(Order.class);
+    }
+
+    public OrderUserType() throws JAXBException {
+        unmarshaller = jaxbContext.createUnmarshaller();
+        marshaller = jaxbContext.createMarshaller();
+        marshaller.setProperty(JAXB_ENCODING, UTF_8.name());
+    }
+
+    @Override
+    public int[] sqlTypes() {
+        // We register the SQL type code from oracle.xdb.XMLType
+        return new int[] { XMLType._SQL_TYPECODE };
+    }
+
+    @Override
+    public Class returnedClass() {
+        return Order.class;
+    }
+
+    @Override
+    public boolean equals(final Object x, final Object y) {
+        return (x != null) &amp;&amp; x.equals(y);
+    }
+
+    @Override
+    public int hashCode(final Object x) {
+        return (x != null) ? x.hashCode() : 0;
+    }
+
+    @Override
+    public Object nullSafeGet(final ResultSet resultSet,
+            final String[] names,
+            final SessionImplementor session,
+            final Object owner) throws SQLException {
+        XMLType xmlType = (XMLType) resultSet.getObject(names[0]);
+
+        Order document = null;
+        if (xmlType != null) {
+            try {
+                // here we use JAXB to unmarshal from the org.w3c.dom.Document returned by oracle.xdb.XMLType to our Order class 
+                document = unmarshaller.unmarshal(xmlType.getDocument(), Order.class).getValue();
+            } catch (JAXBException e) {
+                throw new SQLException(&quot;Could not unmarshal Order&quot;, e);
+            }
+        }
+
+        return document;
+    }
+
+    @Override
+    public void nullSafeSet(final PreparedStatement statement,
+            final Object value,
+            final int index,
+            final SessionImplementor session) throws SQLException {
+        try {
+            XMLType xmlType = null;
+            if (value != null) {
+                NativeJdbcExtractor extractor = new OracleJdbc4NativeJdbcExtractor();
+                Connection connection = extractor.getNativeConnection(statement.getConnection());
+                // Using a helper method, we marshal our Order JAXB instance to its String representation and use that to create a oracle.xdb.XMLType instance
+                xmlType = new XMLType(connection, jaxbToString(value));
+            }
+
+            // Important to still set object even if it's null
+            // to prevent &quot;org.h2.jdbc.JdbcSQLException: Parameter &quot;#?&quot; is not set; SQL statement&quot;
+            statement.setObject(index, xmlType);
+        } catch (Exception e) {
+            throw new SQLException(&quot;Could not marshal Order&quot;, e);
+        }
+    }
+
+    @Override
+    public Object deepCopy(final Object value) {
+        return value;
+    }
+
+    @Override
+    public boolean isMutable() {
+        return true;
+    }
+
+    @Override
+    public Serializable disassemble(final Object value) {
+        return (Serializable) value;
+    }
+
+    @Override
+    public Object assemble(final Serializable cached, final Object owner) {
+        return cached;
+    }
+
+    @Override
+    public Object replace(final Object original, final Object target, final Object owner) {
+        return original;
+    }
+
+    protected String jaxbToString(final Object value) throws JAXBException {
+        StringWriter stringWriter = new StringWriter();
+        marshaller.marshal(value, stringWriter);
+
+        return stringWriter.toString();
+    }
+}
+</code></pre>
+
+<p>now that our user type is defined, we need to annotate our entity&rsquo;s <code>order</code> property to inform Hibernate how to map our Order.</p>
+
+<p><code>OrderEntity.java</code></p>
+
+<pre><code>@Entity(name = &quot;t_order&quot;)
+@TypeDefs({
+        @TypeDef(name = &quot;Order&quot;, typeClass = OrderUserType.class)
+})
+public class OrderEntity {
+
+    public static final String NAME = &quot;t_order&quot;;
+    public static final String SEQUENCE_NAME = NAME + &quot;_seq&quot;;
+
+    @Id
+    @GeneratedValue(generator = SEQUENCE_NAME, strategy = SEQUENCE)
+    @SequenceGenerator(name = SEQUENCE_NAME, sequenceName = SEQUENCE_NAME)
+    private Long id;
+
+    private String customer;
+
+    @Type(type = &quot;Order&quot;)
+    @Column(name = &quot;order_xml&quot;)
+    private Order order;
+
+    ...
+</code></pre>
+
+<p>that should do it! Now, if only we had an instance of Oracle running locally to test&hellip; Luckily for us, there is a Docker <a href="https://hub.docker.com/r/wnameless/oracle-xe-11g/">container</a> with just such a thing.</p>
+
+<p>Start up a local instance of Oracle on port <code>49161</code> by running the following container:</p>
+
+<pre><code>$ docker run -d -p 49161:1521 wnameless/oracle-xe-11g
+</code></pre>
+
+<p>and now that we have a database running, we need to configure our app to use it (replace <code>localhost</code> with your <code>docker-machine</code> IP if you&rsquo;re on Windows/OSX):</p>
+
+<p><code>application.yml</code></p>
+
+<pre><code>spring:
+
+  datasource:
+    url: jdbc:oracle:thin:@(description=(address=(protocol=tcp)(host=localhost)(port=49161))(connect_data=(service_name=xe)))
+    username: system
+    password: oracle
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    database-platform: org.hibernate.dialect.Oracle10gDialect
+    database: ORACLE
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+      naming_strategy: org.hibernate.cfg.ImprovedNamingStrategy
+</code></pre>
+
+<p>Right, let&rsquo;s run our app&hellip; and&hellip; another projectile code vommit</p>
+
+<pre><code>...
+Caused by: org.hibernate.MappingException: No Dialect mapping for JDBC type: 2007
+</code></pre>
+
+<p>Arg! Seems Hibernate does not know what column type to use for JDBC type code 2007. Really? Anyone could tell you that code 2007 maps to a column type of <code>XMLTYPE</code>! Gosh, well, suppose the right thing to do would be to give Hibernate a hint by extending the <code>org.hibernate.dialect.Oracle10gDialect</code> and defining the mapping ourselves.</p>
+
+<p><code>OracleXmlDialect.java</code></p>
+
+<pre><code>public class OracleXmlDialect extends Oracle10gDialect {
+
+    public OracleXmlDialect() {
+        registerColumnType(XMLType._SQL_TYPECODE, &quot;XMLTYPE&quot;);
+    }
+
+    ...
+</code></pre>
+
+<p>and now we just need to configure our app to use our newly enlightened dialect</p>
+
+<p><code>application.yml</code></p>
+
+<pre><code>spring:
+
+  ... 
+
+  jpa:
+    database-platform: io.switchbit.persistence.OracleXmlDialect
+   
+...
+</code></pre>
+
+<p>crossing our fingers, run our app once more&hellip;
+Awesome, it&rsquo;s started up. Now let&rsquo;s try and place an order using old curl&rsquo;y wurlies</p>
+
+<pre><code>$ curl -X POST --header &quot;Content-Type: application/xml&quot; --header &quot;Accept: */*&quot; -d &quot;
+&lt;order&gt;
+    &lt;customer&gt;Bob Smith&lt;/customer&gt;
+    &lt;orderItem&gt;
+        &lt;sku&gt;SB123&lt;/sku&gt;
+        &lt;price&gt;99.99&lt;/price&gt;
+    &lt;/orderItem&gt;
+    &lt;orderItem&gt;
+        &lt;sku&gt;SB456&lt;/sku&gt;
+        &lt;price&gt;44.44&lt;/price&gt;
+    &lt;/orderItem&gt;
+&lt;/order&gt;
+&quot; &quot;http://localhost:8080/orders&quot;
+{&quot;id&quot;:50,&quot;customer&quot;:&quot;Bob Smith&quot;,&quot;order&quot;:{&quot;customer&quot;:&quot;Bob Smith&quot;,&quot;orderItems&quot;:[{&quot;sku&quot;:&quot;SB123&quot;,&quot;price&quot;:99.99},{&quot;sku&quot;:&quot;SB456&quot;,&quot;price&quot;:44.44}]}}%   
+</code></pre>
+
+<p>Success! Let&rsquo;s check out what it looks like in the database, just to make sure that it&rsquo;s actually persisted as an XMLTYPE column.</p>
+
+<p><img src="table-describe.png" alt="" /></p>
+
+<p>definitely has, so what did we persist?</p>
+
+<p><img src="table-all.png" alt="" /></p>
+
+<p>Hmm, <code>OPAQUE</code> doesn&rsquo;t really show us much does it? Let&rsquo;s see what&rsquo;s hiding there</p>
+
+<p><img src="table-xml.png" alt="" /></p>
+
+<p>that&rsquo;s better. Let&rsquo;s see if we can actually query the values in our XML</p>
+
+<p><img src="table-xpath.png" alt="" /></p>
+
+<p>yup, we can do that as well. Try changing the sku <code>SB123</code> to say, <code>SB000</code> and you&rsquo;ll notice that no results are found. You know, just to check if it&rsquo;s really working.</p>
+
+<h2 id="i-d-ask-you-to-sit-down-but-you-re-not-going-to-anyway-and-don-t-worry-about-the-vase">I&rsquo;d ask you to sit down, but, you&rsquo;re not going to anyway. And don&rsquo;t worry about the vase.</h2>
+
+<p>With a little work, we&rsquo;ve successfully persisted our JAXB instance to an Oracle XMLType column while still keeping with a simple JPA programming model.</p>
+
+<p>Only one thing remains, how do we allow our app to be tested <em>without</em> having to fire up an Oracle instance every time? What we really want, is to use Oracle when running in a production environment but use <a href="http://www.h2database.com/">H2</a> when running our tests.</p>
+
+<p>We cannot rely on in memory databases, like H2, to support the <code>XMLTYPE</code> data type, so we have to register our dialect a little different depending on what environment we&rsquo;re in, production or when running a test. Currently, the way we tell Hibernate which user type to use for our <code>Order</code> class, does not allow for swapping out implementations at test time to get around the Oracle specific stuff that just won&rsquo;t exist when using an in memory database. So let&rsquo;s change that and register our user type another way that will allow us to use a testable implementation when we need too. Luckily that&rsquo;s quite easy, we can do this in our custom <code>OracleXmlDialect</code> instead of using <code>@TypeDefs</code> annotation:</p>
+
+<p><code>OracleXmlDialect.java</code></p>
+
+<pre><code>public class OracleXmlDialect extends Oracle10gDialect {
+
+    public OracleXmlDialect() {
+        registerColumnType(XMLType._SQL_TYPECODE, &quot;XMLTYPE&quot;);
+    }
+
+    @Override
+    public void contributeTypes(final TypeContributions typeContributions,
+            final ServiceRegistry serviceRegistry) {
+        super.contributeTypes(typeContributions, serviceRegistry);
+        registerTypes(typeContributions);
+    }
+
+    private void registerTypes(final TypeContributions typeContributions) {
+        try {
+            typeContributions.contributeType(new OrderUserType(), new String[]{&quot;Order&quot;});
+        } catch (JAXBException e) {
+            throw new RuntimeException(&quot;Error registering Hibernate custom JAXB types&quot;, e);
+        }
+    }
+
+}
+</code></pre>
+
+<p>and to finish this off, we need to remove the <code>@TypeDefs</code> from our entity:</p>
+
+<p><code>OrderEntity.java</code></p>
+
+<pre><code>@Entity(name = &quot;t_order&quot;)
+public class OrderEntity {
+
+    ...
+</code></pre>
+
+<p>now that registering our custom type can been swapped out, all we have to do now is create a testable version of our <code>OracleXmlDialect</code> that does not depend on any Oracle specific implementation. I.e. we&rsquo;ll marshal/unmarshal our JAXB instance from/to String which will be persisted in a VARCHAR column.</p>
+
+<p><code>H2OracleXmlDialect.java</code></p>
+
+<pre><code>public class H2OracleXmlDialect extends Oracle10gDialect {
+
+    public H2OracleXmlDialect() {
+        // For testing, just map it to a VARCHAR please
+        registerColumnType(XMLType._SQL_TYPECODE, &quot;VARCHAR2&quot;);
+    }
+
+    @Override
+    public void contributeTypes(final TypeContributions typeContributions,
+            final ServiceRegistry serviceRegistry) {
+        super.contributeTypes(typeContributions, serviceRegistry);
+        registerTypes(typeContributions);
+    }
+
+    private void registerTypes(final TypeContributions typeContributions) {
+        try {
+            typeContributions.contributeType(new OrderUserType() {
+
+                // Overriding this method to avoid the Oracle specific stuff
+                @Override
+                public void nullSafeSet(final PreparedStatement statement, final Object value, final int index, final SessionImplementor session) throws SQLException {
+                    try {
+                        statement.setObject(index, jaxbToString(value));
+                    } catch (JAXBException e) {
+                        throw new SQLException(&quot;Could not set test Order&quot;, e);
+                    }
+                }
+            }, new String[]{&quot;Order&quot;});
+        } catch (JAXBException e) {
+            throw new RuntimeException(&quot;Error registering Hibernate custom JAXB types&quot;, e);
+        }
+    }
+}
+</code></pre>
+
+<p>and now we can override the database connection settings for our tests (we&rsquo;ll use a <code>test</code> profile in our test class, which will switch this on)</p>
+
+<p><code>application-test.xml</code></p>
+
+<pre><code>spring:
+
+  datasource:
+    url: jdbc:h2:mem:xe;MODE=Oracle;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    database-platform: io.switchbit.persistence.H2OracleXmlDialect
+    database: H2
+</code></pre>
+
+<p>and now we can write a quick test for our RESTful resource</p>
+
+<pre><code>@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(Application.class)
+@WebIntegrationTest(randomPort = true)
+@ActiveProfiles(&quot;test&quot;)
+public class ApplicationTest {
+
+    @Value(&quot;${local.server.port}&quot;)
+    private int port;
+
+    @Test
+    public void persist_order_successfully() throws IOException {
+        Order order = JAXB.unmarshal(new ClassPathResource(&quot;order.xml&quot;).getFile(), Order.class);
+
+        RestTemplate restTemplate = new TestRestTemplate();
+        ResponseEntity&lt;OrderEntity&gt; response = restTemplate.postForEntity(
+                format(&quot;http://localhost:%d/orders&quot;, port),
+                order,
+                OrderEntity.class);
+
+        assertThat(&quot;Placing order did not return 200 OK&quot;, response.getStatusCode(), equalTo(OK));
+        assertNotNull(&quot;Persisted order Id cannot be null&quot;, response.getBody().getId());
+    }
+}
+</code></pre>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>In this post, we saw how we can persist a JAXB instance to an Oracle database using the native XMLType support, without breaking the JPA programming model and still with the ability to test against an in memory database like H2.</p>
+
+<p><em>The complete code for this post is available on GitHub <a href="https://github.com/switchbitio/xmltype-jpa">here</a></em></p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

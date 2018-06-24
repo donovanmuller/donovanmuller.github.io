@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Camel Spring Cloud Stream &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>Camel Spring Cloud Stream</h1>
+  <span class="post-date">Fri, Jan 13, 2017</span>
+  
+
+<p>The new Camel Spring Cloud Stream component allows you to use the programming model and binder abstractions from the Spring Cloud Stream project natively within Apache Camel.</p>
+
+<p>In this post we&rsquo;ll breeze through a simple sample application demonstrating how to use the Camel Spring Cloud Stream component.</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>I&rsquo;ll let the official project page describe what <a href="https://cloud.spring.io/spring-cloud-stream/">Spring Cloud Stream</a> is all about: <em>&ldquo;Spring Cloud Stream is a framework for building message-driven microservices. &hellip; Spring Cloud Stream provides an opinionated configuration of message brokers, introducing the concepts of persistent pub/sub semantics, consumer groups and partitions across several middleware vendors. This opinionated configuration provides the basis to create stream processing applications.&rdquo;</em></p>
+
+<p>In a nutshell, Spring Cloud Stream abstracts the niggly bits of connecting your applications to messaging middleware to easily facilitate building &ldquo;stream processing&rdquo; pipelines. The <a href="http://docs.spring.io/spring-cloud-stream/docs/Brooklyn.SR1/reference/htmlsingle/#_programming_model">programming model</a> is centered around binding abstract messaging channels (really Spring Integration <code>MessageChannel</code>&rsquo;s at this point), which facilitate sending and receiving messages, to an interface method. These interfaces can then be used to send/receive messages. Methods can also be annotated (with <a href="http://docs.spring.io/spring-cloud-stream/docs/Brooklyn.SR1/reference/htmlsingle/#_using_streamlistener_for_automatic_content_type_handling"><code>@StreamListener</code></a> for example), turning a run of the mill method declaration into an easy to reason about messaging processing mechanism, where method parameters are actually incoming messages (including <a href="http://docs.spring.io/spring-cloud-stream/docs/Brooklyn.SR1/reference/htmlsingle/#contenttypemanagement">content conversion</a>) and the return value results in a new message being sent.</p>
+
+<p>What&rsquo;s more, the actual messaging middleware (Kafka, RabbitMQ, etc.) is completely abstracted away. The channels described above are bound to the messaging layer at runtime. Allowing you to swap out messaging middleware implementations at will, without affecting your code. Powerful stuff.</p>
+
+<h2 id="a-source-a-processor-and-a-sink-walk-into-a-bar">A Source, a Processor and a Sink walk into a bar</h2>
+
+<p>At it&rsquo;s most basic, Stream comes with three <a href="http://docs.spring.io/spring-cloud-stream/docs/Brooklyn.SR1/reference/htmlsingle/#__literal_source_literal_literal_sink_literal_and_literal_processor_literal">predefined interfaces</a>: <code>Source</code>, <code>Processor</code> and <code>Sink</code>. These interfaces have a combination of <code>input</code> and <code>output</code> bindings which help with the following scenarios:</p>
+
+<ul>
+<li>if you only need to accept incoming messages, maybe you only want to persist the message, then you want a <code>Sink</code>, which only contains a <code>input</code> channel binding.</li>
+<li>however, you might want to receive and incoming message, perform some transformation on it and then send it to another application. In this case, you want a <code>Processor</code>, which has both <code>input</code> and <code>output</code> channel bindings.</li>
+<li>If you poll your database and then send corresponding messages out, you&rsquo;ll want a <code>Source</code>. Which only contains a <code>output</code> channel binding.</li>
+</ul>
+
+<p>You can define any combination of channels, with different names and even different corresponding binders but generally these three interfaces will get you quite far.</p>
+
+<p>It is on this premise that the Camel Spring Cloud Stream component draws inspiration.</p>
+
+<h2 id="a-stream-full-of-camels">A Stream full of Camels</h2>
+
+<p>Since Spring Cloud Stream is essentially built on top of Spring Integration, why would you want to use <a href="http://camel.apache.org/">Apache Camel</a> in your apps, why not just use Spring Integration? After all, they&rsquo;re quite similar.</p>
+
+<p>Well, in my opinion Camel&rsquo;s programming model, based on the concept of defining a <a href="http://camel.apache.org/routes.html"><code>Route</code></a>, consisting of components that amongst <em>many</em> other things, implement the EAI patterns, is exceptionally easy to get to grips with and use. You can go from zero to a small demo app in no time at all. Plus, Camel has been around for&hellip; donkeys years and has components for just about any integration you can think of. This is not to say that there is anything wrong with Spring Integration, just that Camel is a worthy substitute in many cases.</p>
+
+<p>So what if you could have the power and convenience of Spring Cloud Stream combined with the simple, yet powerful ecosystem of Apache Camel? Well, that&rsquo;s exactly what I thought. Turns out, it works rather nicely, and so the <a href="https://github.com/donovanmuller/camel-spring-cloud-stream"><strong>Camel Spring Cloud Stream</strong></a> component was born.</p>
+
+<blockquote>
+<p>See the Camel Spring Cloud Stream component GitHub repo for more information: <a href="https://github.com/donovanmuller/camel-spring-cloud-stream">https://github.com/donovanmuller/camel-spring-cloud-stream</a></p>
+</blockquote>
+
+<h2 id="a-tale-of-two-tweets">A tale of two Tweets</h2>
+
+<p>Instead of boring you with more technical facts, let&rsquo;s jump into a sample stream, consisting of three applications. These applications will demonstrate how you can use the Camel Spring Cloud Stream component to mimic the functionality of the <code>Source</code>, <code>Processor</code> and <code>Sink</code> interfaces.</p>
+
+<h3 id="an-experiment">An experiment</h3>
+
+<p>Instead of the usual boring &ldquo;Hello World!&rdquo; sample application, I thought I&rsquo;d make it interesting and build a stream that does the following:</p>
+
+<ul>
+<li>Monitors a Tweet for any retweets,</li>
+<li>when someone retweets the tweet (no comments! - <em>it doesn&rsquo;t register as a retweet</em>), we&rsquo;ll strip off the retweeters screen name,</li>
+<li>then we&rsquo;ll prepare a reply tweet, to thank the user for retweeting our tweet</li>
+<li>and finally, we&rsquo;ll tweet that reply out on our timeline</li>
+</ul>
+
+<p>Could it backfire somehow and be construed as spam? Maybe&hellip; but I&rsquo;m guessing about 10 or so people will actually retweet the tweet I&rsquo;ll send out to announce this post, so&hellip; we&rsquo;ll see 😬</p>
+
+<h3 id="to-the-code">To the code</h3>
+
+<blockquote>
+<p>The source for this sample application can be viewed in it&rsquo;s entirety here: <a href="https://github.com/donovanmuller/camel-twitter-stream">https://github.com/donovanmuller/camel-twitter-stream</a>. Use at your own risk.</p>
+</blockquote>
+
+<p>I&rsquo;ll be highlighting and walking through only the Camel route for each application, since that is the meaty camel center of this Spring&rsquo;y sandwich. Each app is packaged as a <a href="https://projects.spring.io/spring-boot/">Spring Boot</a> application, including only the <a href="https://github.com/donovanmuller/camel-spring-cloud-stream/tree/master/camel-spring-cloud-stream-starter"><code>camel-spring-cloud-stream-starter</code></a>, the <a href="https://github.com/spring-cloud/spring-cloud-stream-binder-rabbit">Rabbit MQ binder</a> (we&rsquo;ll be using Rabbit MQ as the messaging middleware in this example, however, feel free to swap it out for any other supported implementation, like <a href="https://github.com/spring-cloud/spring-cloud-stream-binder-kafka">Kafka</a> for example) and supporting starter dependencies.</p>
+
+<h4 id="twitter-source">Twitter Source</h4>
+
+<p>The <a href="https://github.com/donovanmuller/camel-twitter-stream/tree/master/twitter-source">twitter-source</a> application will poll the Twitter API&rsquo;s (using <a href="http://twitter4j.org/en/index.html">Twitter4j</a>) for any retweets of the tweet we will specify. When the retweeter is returned, we&rsquo;ll grab their <code>screen_name</code>. This is what this looks like:</p>
+
+<pre><code>@Service
+public class RetweetService {
+
+	private Twitter twitter;
+
+	public RetweetService(Twitter twitter) {
+		this.twitter = twitter;
+	}
+
+	@Handler
+	public List&lt;String&gt; getRetweetsWithScreenNames(@Header(&quot;statusId&quot;) Long statusId)
+			throws TwitterException {
+		return twitter.getRetweets(statusId).stream()
+				.map(tweet -&gt; tweet.getUser().getScreenName())
+				.collect(Collectors.toList());
+	}
+}
+</code></pre>
+
+<p>A simple Spring bean, <a href="https://github.com/donovanmuller/camel-twitter-stream/blob/master/twitter-source/src/main/java/io/switchbit/RetweetService.java"><code>RetweetService.java</code></a>, injected with a Twitter4j <code>Twitter</code> reference to call the Twitter API&rsquo;s.</p>
+
+<p>The <code>statusId</code> is the tweet we&rsquo;re monitoring for retweets. When we get retweets, we grab the <code>screenName</code>
+from them and return the screen names as a <code>List&lt;String&gt;</code>.</p>
+
+<p>Now let&rsquo;s have a look at the Camel route, <a href="https://github.com/donovanmuller/camel-twitter-stream/blob/master/twitter-source/src/main/java/io/switchbit/TwitterSourceRoute.java"><code>TwitterSourceRoute.java</code></a>:</p>
+
+<pre><code>@Component
+public class TwitterSourceRoute extends RouteBuilder {
+
+	private TwitterProperties properties;
+	private IdempotentRepository idempotentRepository;
+
+	public TwitterSourceRoute(TwitterProperties properties,
+			IdempotentRepository idempotentRepository) {
+		this.properties = properties;
+		this.idempotentRepository = idempotentRepository;
+	}
+
+	@Override
+	public void configure() throws Exception {
+		fromRetweets();
+		from(&quot;direct:retweets&quot;).to(&quot;scst:output&quot;);
+
+	}
+
+	private ExpressionNode fromRetweets() {
+		return from(&quot;timer:pollRetweets?fixedRate=true&amp;period={{twitter.pollPeriod}}&quot;)
+				.setHeader(&quot;statusId&quot;, simple(&quot;{{twitter.statusId}}&quot;))
+				.to(&quot;bean:retweetService&quot;)
+                .split(body())
+				.idempotentConsumer(simple(&quot;${body}&quot;), idempotentRepository)
+				.skipDuplicate(properties.getSkipDuplicate())
+				.log(&quot;Received retweet from: @${body}&quot;).to(&quot;direct:retweets&quot;);
+	}
+}
+</code></pre>
+
+<p>There are actually two route definitions kicking about here. The first, referenced as <code>fromRetweets</code>, declares a <a href="http://camel.apache.org/timer.html"><code>timer</code></a> component, that fires every <code>twitter.pollPeriod</code> (a Spring configuration property).</p>
+
+<p>Then we call our <code>RetweetService</code> bean and try get retweeters screen names. Any retweeters we find, will be run through an <a href="http://camel.apache.org/idempotent-consumer.html">Idempotent Consumer</a> backed by a <a href="https://github.com/donovanmuller/camel-twitter-stream/blob/master/twitter-source/src/main/java/io/switchbit/configuration/TwitterSourceConfiguration.java#L60"><code>SpringCacheIdempotentRepository</code></a> which in turn is backed by Redis . Basically, this ensures that if our app is ever restarted, we won&rsquo;t re-process the retweets again (otherwise&hellip; cue Twitter outrage).</p>
+
+<p>From there, we basically send to a <code>direct</code> consumer component, which then feeds the new Spring Cloud Stream producer component:</p>
+
+<pre><code>    from(&quot;direct:retweets&quot;).to(&quot;scst:output&quot;);
+</code></pre>
+
+<p>This means, send the incoming exchange over the <code>output</code> channel I&rsquo;m about to lazily create and bind the channel to a binder implementation and then send.</p>
+
+<p>If this was a &ldquo;normal&rdquo; Spring Cloud Stream app, it could look something like this:</p>
+
+<pre><code>@EnableBinding(Source.class)
+public class TwitterSource {
+
+    private MessageChannel output;
+
+    public TwitterSource(MessageChannel output) {
+        this.output = output;
+    }
+
+    public void sendRetweets(String screenName) {
+         output.send(MessageBuilder.withPayload(screenName).build());
+    }
+}
+</code></pre>
+
+<p>imagining a similar Spring based polling mechanism invoking <code>twitterSource.sendRetweets(&quot;humpdeehump42&quot;)</code>.</p>
+
+<h4 id="tweet-processor">Tweet Processor</h4>
+
+<p>This route, <a href="https://github.com/donovanmuller/camel-twitter-stream/blob/master/tweet-processor/src/main/java/io/switchbit/TweetProcessorRoute.java"><code>TweetProcessorRoute</code></a>, takes the incoming screen name, passes that into the Camel <a href="http://camel.apache.org/mustache.html">Mustache</a> component to render content that will become our reply tweet:</p>
+
+<pre><code>@Component
+public class TweetProcessorRoute extends RouteBuilder {
+
+    @Override
+    public void configure() throws Exception {
+        from(&quot;scst:input&quot;)
+                .to(&quot;mustache:tweet.mustache&quot;)
+                .to(&quot;scst:output&quot;);
+    }
+}
+</code></pre>
+
+<p>Pretty self explanatory, receive the message over the Spring Cloud Stream <code>input</code> channel, run it through Mustache, which renders a template file located in <a href="https://github.com/donovanmuller/camel-twitter-stream/blob/master/tweet-processor/src/main/resources/tweet.mustache"><code>src/main/resources/tweet.mustache</code></a> and then send the rendered content out on the <code>output</code> Spring Cloud Stream channel.</p>
+
+<p>A Spring Cloud Stream app would comparatively look something like this:</p>
+
+<pre><code>@EnableBinding(Processor.class)
+public class TweetProcessor {
+
+    private Mustache mustache;
+
+    public TweetProcessor(Mustache mustache) {
+        this.mustache = mustache;
+    }
+
+    @StreamListener(Processor.INPUT)
+    @SendTo(Processor.OUTPUT)
+    public String handle(String screenName) {
+        return mustache.render(screenName);
+    }
+}
+</code></pre>
+
+<h4 id="twitter-sink">Twitter Sink</h4>
+
+<p>Lastly, we&rsquo;ll take the incoming reply tweet content and create a tweet on our timeline:</p>
+
+<pre><code>@Component
+public class TwitterSinkRoute extends RouteBuilder {
+
+    @Override
+	public void configure() throws Exception {
+        from(&quot;scst:input&quot;)
+                .to(&quot;twitter:timeline/user&quot;);
+	}
+}
+</code></pre>
+
+<p>we use the Camel <a href="http://camel.apache.org/twitter.html"><code>twitter</code></a> component (not Twitter4j directly as in the Twitter Source application) to create a tweet on our timeline. It takes the incoming Exchange&rsquo;s <code>getIn().getBody()</code> as the content of the tweet, in our case, the rendered Mustache template content from the Tweet Processor app.</p>
+
+<p>Again, for comparison, this is what the default Spring Cloud Stream version would look like:</p>
+
+<pre><code>@EnableBinding(Sink.class)
+public class TwitterSink {
+
+    private Twitter twitter;
+
+    public TwitterSink(Twitter twitter) {
+        this.twitter = twitter;
+    }
+
+    @StreamListener(Sink.INPUT)
+    public void handle(String tweet) {
+        twitter.tweet(tweet);
+    }
+}
+</code></pre>
+
+<p>That&rsquo;s it! Ship it!</p>
+
+<h3 id="just-flow-with-it">Just Flow with it</h3>
+
+<p>You could manually deploy these three apps. However, you would have to map the <code>output</code> and <code>input</code> channel destinations correctly for the stream to flow (not getting into that now&hellip; see the Spring Cloud Stream <a href="http://docs.spring.io/spring-cloud-stream/docs/Brooklyn.SR1/reference/htmlsingle/#_connecting_multiple_application_instances">references docs</a>). An easier way is to use the awesome <a href="http://cloud.spring.io/spring-cloud-dataflow/">Spring Cloud Data Flow</a> project to orchestrate the deployment of this stream.</p>
+
+<p>The Spring Cloud Data Flow project provides a DSL that you can use to register, define and deploy Spring Cloud Stream apps with. You also have your choice of deployment platform thanks to the <a href="https://github.com/spring-cloud/spring-cloud-deployer">Spring Cloud Deployer</a> abstraction. Currently <a href="spring-cloud-data-flow-implementations">supported platforms</a> are Local (for development), Cloud Foundry, Kubernetes, Mesos, RedHat OpenShift, Hashicorp Nomad etc. I&rsquo;m not going to go into detail of how to get the Data Flow server installed and running, however, you can check out the reference docs for the various deployer implementations.</p>
+
+<h4 id="shifting-a-camel-along-the-stream">Shifting a Camel along the Stream</h4>
+
+<p>I&rsquo;m going to be a little bias (I contributed it 😎) and use the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-server-openshift">OpenShift deployer</a> to deploy our sample app.</p>
+
+<p>There are quite a few ways to get up and running with <a href="https://www.openshift.com/">OpenShift</a> so I recommend reading the <a href="https://donovanmuller.github.io/spring-cloud-dataflow-server-openshift/docs/1.1.0.RELEASE/reference/htmlsingle/">reference docs</a> to get a Data Flow server up and running. For this sample application I have spun up a very basic cluster on Google Compute Engine instances and have deployed the OpenShift Data Flow server to it.</p>
+
+<blockquote>
+<p>If you&rsquo;re interested, you can poke around the <a href="https://104.199.93.47:8443/console">OpenShift console</a> to see what it&rsquo;s all about. I&rsquo;ll run the cluster for a few days/weeks after this post is released. Feel free to have a look around at <a href="https://104.199.93.47:8443/console">https://104.199.93.47:8443/console</a>. You can login with username/password (<code>twitter</code>/<code>twitter</code>). Please be a good citizen and not try do something nasty. 👍</p>
+</blockquote>
+
+<p>I can&rsquo;t be bothered to setup authentication on the Data Flow UI, so we&rsquo;ll use the Data Flow Shell to register, define and deploy our stream. First go grab the Shell if you haven&rsquo;t already, then fire it up</p>
+
+<pre><code>$ wget http://repo.spring.io/release/org/springframework/cloud/spring-cloud-dataflow-shell/1.1.1.RELEASE/spring-cloud-dataflow-shell-1.1.1.RELEASE.jar
+$ java -jar spring-cloud-dataflow-shell-1.1.1.RELEASE.jar --dataflow.uri=http://scdf.openshift.switchbit.io/
+...
+dataflow:&gt;
+</code></pre>
+
+<p>use the <code>dataflow.uri</code> that corresponds to your deployment platform.</p>
+
+<p>Next we register our three apps</p>
+
+<pre><code>dataflow:&gt;app register --name twitter-source --type source --uri docker:donovanmuller/twitter-source:latest
+Successfully registered application 'source:twitter-source'
+dataflow:&gt;app register --name tweet-px --type processor  --uri docker:donovanmuller/tweet-processor:latest
+Successfully registered application 'processor:tweet-processor'
+dataflow:&gt;app register --name twitter-sink --type sink --uri docker:donovanmuller/twitter-sink:latest
+Successfully registered application 'sink:twitter-sink'
+dataflow:&gt;app list
+╔══════════════╤═════════╤════════════╤════╗
+║    source    │processor│    sink    │task║
+╠══════════════╪═════════╪════════════╪════╣
+║twitter-source│tweet-px │twitter-sink│    ║
+╚══════════════╧═════════╧════════════╧════╝
+
+dataflow:&gt;
+</code></pre>
+
+<p>next we create the definition of our <code>twitter</code> stream</p>
+
+<pre><code>dataflow:&gt;stream create --name twitter --definition &quot;twitter-source | tweet-px | twitter-sink&quot;
+Created new stream 'twitter'
+</code></pre>
+
+<p>and finally deploy it!</p>
+
+<pre><code>dataflow:&gt;stream deploy --name twitter --propertiesFile /tmp/camel-twitter-stream.properties
+Deployment request has been sent for stream 'twitter'
+</code></pre>
+
+<p>note that we pass in reference to a properties file <code>camel-twitter-stream.properties</code> that contains the Spring configuration properties for all the apps. This includes Twitter API keys, the tweet <code>statusId</code> to monitor etc. It looks like this:</p>
+
+<pre><code>app.twitter-source.twitter.consumerKey=...
+app.twitter-source.twitter.consumerSecret=...
+app.twitter-source.twitter.accessToken=...
+app.twitter-source.twitter.accessTokenSecret=...
+app.twitter-source.twitter.statusId=...
+app.twitter-source.spring.rabbitmq.host=rabbitmq
+app.twitter-source.spring.redis.host=redis
+
+app.tweet-px.spring.rabbitmq.host=rabbitmq
+
+app.twitter-sink.camel.component.twitter.consumerKey=...
+app.twitter-sink.camel.component.twitter.consumerSecret=...
+app.twitter-sink.camel.component.twitter.accessToken=...
+app.twitter-sink.camel.component.twitter.accessTokenSecret=...
+app.twitter-sink.spring.rabbitmq.host=rabbitmq
+</code></pre>
+
+<p>if all goes well, our stream should be deployed, listening for those elusive retweets&hellip;</p>
+
+<p><img src="scdf-camel-twitter-openshift-1.png" alt="Camel Twitter Stream deployed to OpenShift" /></p>
+
+<p>as mentioned above, feel free to <a href="https://104.199.93.47:8443/console">browse around</a>, while the cluster is up. Check the logs etc. etc.</p>
+
+<h2 id="wrapping-up">Wrapping up</h2>
+
+<p>This was a brief, light hearted walk through a sample application using the new Camel Spring Cloud Stream component. Hopefully it gave you a good idea of how simple it is to integrate Spring Cloud Stream into your Camel routes but also, how easy it is to leverage the power and flexibility you get with Spring Cloud Stream and Spring Cloud Data Flow.</p>
+
+<blockquote>
+<p>The source for this sample application can be found here: <a href="https://github.com/donovanmuller/camel-twitter-stream">https://github.com/donovanmuller/camel-twitter-stream</a>.</p>
+</blockquote>
+
+<p>If you have any questions or feedback, please let me know at <a href="https://twitter.com/donovancmuller">@donovancmuller</a>.</p>
+
+<h2 id="try-it">Try it!</h2>
+
+<p>In passing, why not retweet the tweet below and see the stream described here in action!</p>
+
+<p><blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">Want to see the new Apache Camel <a href="https://twitter.com/springcloud">@springcloud</a> Stream component in action? See below! <a href="https://twitter.com/hashtag/SpringCloudStream?src=hash">#SpringCloudStream</a> <a href="https://twitter.com/hashtag/ApacheCamel?src=hash">#ApacheCamel</a> <a href="https://t.co/Ssh2Qdwk60">pic.twitter.com/Ssh2Qdwk60</a></p>&mdash; Donovan Muller (@donovancmuller) <a href="https://twitter.com/donovancmuller/status/819691472572346370">January 12, 2017</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

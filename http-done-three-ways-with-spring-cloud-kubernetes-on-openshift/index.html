@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>HTTP done three ways with Spring Cloud Kubernetes on OpenShift &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>HTTP done three ways with Spring Cloud Kubernetes on OpenShift</h1>
+  <span class="post-date">Tue, May 2, 2017</span>
+  
+
+<p>A brief look at three ways to achieve synchronous HTTP based communication between microservices in an OpenShift environment using Spring Cloud projects.</p>
+
+<p>Despite the fact that I now believe messaging based asynchronous communication between bounded contexts (in the context of DDD) is a better way for systems to communicate, there are times when a quick RESTful call is the pragmatic choice. This post takes a brief look at three ways to achieve this when deploying to an OpenShift instance.</p>
+
+<blockquote>
+<p>For the unacquainted, <a href="https://www.openshift.com/">OpenShift</a> is a distribution of Kubernetes which adds &ldquo;enterprise&rdquo; and other developer centric features and workflows. The examples in this post are based on <a href="https://www.openshift.org/">OpenShift Origin</a>, the upstream community version.</p>
+</blockquote>
+
+<h2 id="muster-the-cluster">Muster the cluster</h2>
+
+<p>Before we dive in though, let&rsquo;s standup a local OpenShift cluster to deploy to. I&rsquo;ll be using <a href="https://docs.openshift.org/latest/minishift/index.html">minishift</a> to help with this. Install the latest release by following the documentation here: <a href="https://docs.openshift.org/latest/minishift/getting-started/installing.html">https://docs.openshift.org/latest/minishift/getting-started/installing.html</a> (I&rsquo;m using the <code>1.0.0-rc.2</code> version at time of writing)</p>
+
+<p>Once installed, spin up an instance with</p>
+
+<pre><code>$ minishift addons install --defaults
+Default add-ons anyuid, admin-user installed
+$ minishift addons enable admin-user
+Addon 'admin-user' enabled
+$ minishift start \
+  --openshift-version v1.5.0
+  --cpus 4 # adjust accordingly
+Starting local OpenShift cluster using 'xhyve' hypervisor...
+Downloading ISO 'https://github.com/minishift/minishift-b2d-iso/releases/download/v1.0.2/minishift-b2d.iso'
+ 40.00 MB / 40.00 MB [=...=] 100.00% 0s
+Downloading OpenShift binary 'oc' version 'v1.5.0'
+ 18.93 MB / 18.93 MB [=...=] 100.00% 0s
+-- Checking OpenShift client ... OK
+-- Checking Docker client ... OK
+-- Checking Docker version ... OK
+-- Checking for existing OpenShift container ... OK
+-- Checking for openshift/origin:v1.5.0 image ...
+   Pulling image openshift/origin:v1.5.0
+   Pulled 0/3 layers, 3% complete
+...
+   Pulled 3/3 layers, 100% complete
+   Extracting
+   Image pull complete
+-- Checking Docker daemon configuration ... OK
+-- Checking for available ports ... OK
+-- Checking type of volume mount ...
+   Using Docker shared volumes for OpenShift volumes
+-- Creating host directories ... OK
+-- Finding server IP ...
+   Using 192.168.64.12 as the server IP
+-- Starting OpenShift container ...
+   Creating initial OpenShift configuration
+   Starting OpenShift using container 'origin'
+   Waiting for API server to start listening
+   OpenShift server started
+-- Adding default OAuthClient redirect URIs ... OK
+-- Installing registry ... OK
+-- Installing router ... OK
+-- Importing image streams ... OK
+-- Importing templates ... OK
+-- Login to server ... OK
+-- Creating initial project &quot;myproject&quot; ... OK
+-- Removing temporary directory ... OK
+-- Checking container networking ... OK
+-- Server Information ...
+   OpenShift server started.
+   The server is accessible via web console at:
+       https://192.168.64.12:8443
+
+   You are logged in as:
+       User:     developer
+       Password: developer
+
+   To login as administrator:
+       oc login -u system:admin
+
+Applying addon admin-user:.user &quot;admin&quot; created
+.cluster role &quot;cluster-admin&quot; added: &quot;admin&quot;
+</code></pre>
+
+<p>Once OpenShift is running, make sure to login with the <code>oc</code> CLI tool, as this will shortly be important when using the Fabric8 Maven tooling to deploy our applications.</p>
+
+<pre><code>$ oc login -u system:admin
+Logged into &quot;https://192.168.64.12:8443&quot; as &quot;system:admin&quot; using existing credentials.
+
+You have access to the following projects and can switch between them with 'oc project &lt;projectname&gt;':
+
+    default
+    kube-system
+  * myproject
+    openshift
+    openshift-infra
+
+Using project &quot;myproject&quot;.
+</code></pre>
+
+<p>you should also access the OpenShift console at the location indicated after running <code>minishift start</code>, which in the example above is <a href="https://192.168.64.12:8443">https://192.168.64.12:8443</a>. You can login with <code>admin</code> / <code>admin</code>.</p>
+
+<h2 id="the-echo-example-example-example">The echo example&hellip; example.. example</h2>
+
+<p>The example consists of two microservices:</p>
+
+<ul>
+<li><code>echo</code> - which accepts a <code>POST /echo</code> and using the request body will call</li>
+<li><code>chamber</code> - which simply echoes the request to <code>/chamber</code></li>
+</ul>
+
+<p>The complete source code for this example is available on GitHub here:</p>
+
+<p><a href="https://github.com/donovanmuller/echo-example">https://github.com/donovanmuller/echo-example</a></p>
+
+<h2 id="vanilla-resttemplate">Vanilla RestTemplate</h2>
+
+<p>Let&rsquo;s start off with the most basic example, using plain old <code>RestTemplate</code>. Note how we reference the <code>chamber</code> service in <code>EchoController</code>:</p>
+
+<pre><code>@PostMapping
+String echo(@RequestBody String message) {
+  log.info(&quot;Sending echo message: {}&quot;, message);
+
+  ResponseEntity&lt;String&gt; response = restTemplate
+      .postForEntity(&quot;http://chamber:8080/chamber&quot;, message, String.class);
+
+  return response.getBody();
+}
+</code></pre>
+
+<p>The <code>url</code> parameter is specified as <code>http://chamber:8080/chamber</code>. So how does this work? How and to what does <code>chamber</code> resolve?</p>
+
+<p>As you will see, the <code>chamber</code> reference is to a OpenShift/Kubernetes <a href="https://docs.openshift.org/latest/architecture/core_concepts/pods_and_services.html#services">Service</a> which, through the <a href="https://docs.openshift.org/latest/architecture/additional_concepts/networking.html#architecture-additional-concepts-openshift-dns">OpenShift DNS</a> allows a Pod IP to be queried using the Service name.</p>
+
+<h3 id="deploying-to-openshift-with-the-fabric8-maven-tooling">Deploying to OpenShift with the Fabric8 Maven tooling</h3>
+
+<p>To better visualise the above and to actually test our vanilla <code>RestTemplate</code> based services, we need to deploy them to our local OpenShift instance.</p>
+
+<p>Thankfully, this has been made almost too easy by the awesome tooling provided by the <a href="https://fabric8.io/">Fabric8</a> team. All it takes is to include the <code>fabric8-maven-plugin</code> into our projects and profit. It really is that easy. Here is the complete <code>pom.xml</code> from the <code>echo</code> service</p>
+
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;
+         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;parent&gt;
+        &lt;groupId&gt;io.switchbit&lt;/groupId&gt;
+        &lt;artifactId&gt;echo-parent&lt;/artifactId&gt;
+        &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+        &lt;relativePath&gt;..&lt;/relativePath&gt;
+    &lt;/parent&gt;
+
+    &lt;groupId&gt;io.switchbit&lt;/groupId&gt;
+    &lt;artifactId&gt;echo&lt;/artifactId&gt;
+
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;io.fabric8&lt;/groupId&gt;
+                &lt;artifactId&gt;fabric8-maven-plugin&lt;/artifactId&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;id&gt;fmp&lt;/id&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;resource&lt;/goal&gt;
+                            &lt;goal&gt;build&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;
+</code></pre>
+
+<p>the <code>build</code> section is where the magic happens.
+Urm, ok. How&hellip;?</p>
+
+<ul>
+<li>How does it know where our OpenShift instance is running?</li>
+<li>How does it authenticate?</li>
+<li>OpenShift/Kubernetes schedule Docker containers right, so where does our service get layered into a Docker image and pushed to the OpenShift internal <a href="https://docs.openshift.org/latest/install_config/registry/index.html">registry</a>?</li>
+<li>OpenShift/Kubernetes needs various Objects that declaratively tell it what and how to run our containers, where does that come from?</li>
+</ul>
+
+<p><a href="https://maven.fabric8.io">RTFM</a>. However, in a nutshell and using the OpenShift options (standard Kubernetes is also supported)</p>
+
+<ul>
+<li>It deploys to the OpenShift instance to which you are currently logged into with the <code>oc</code> CLI tool (hence the nudge to login earlier&hellip;)</li>
+<li>the plugin builds Docker images using the <a href="https://maven.fabric8.io/#build-openshift">S2I</a> build mechanism. Choosing which base image to use with an abstraction called <a href="https://maven.fabric8.io/#generators">Generators</a>. In our case, the <a href="https://maven.fabric8.io/#generator-spring-boot">Spring Boot generator</a> is activated based on the dependencies in our project and a Boot optimised build is selected.</li>
+<li>Another abstraction called <a href="https://maven.fabric8.io/#enrichers">Enrichers</a> are used to optimise the OpenShift resource objects for a Spring Boot application. For instance the <code>f8-spring-boot-health-check</code> enricher configures the proper health and readiness probes based on <code>spring-boot-starter-actuator</code> settings of your project.</li>
+</ul>
+
+<p>So now that we kinda know how it works, let&rsquo;s see it in action. So we can see what&rsquo;s going on, open the <a href="https://192.168.64.12:8443/console/project/myproject/overview"><code>My Project</code></a> project in the OpenShift console and kick off the following Maven goal:</p>
+
+<pre><code>$ mvn fabric8:deploy
+</code></pre>
+
+<p>First time this runs it might take a while to pull the base S2I images but after a short while you&rsquo;ll see two Builds started and once those have completed, you&rsquo;ll see two Deployments fired up.</p>
+
+<p>Once they&rsquo;re a nice dark blue colour (dark blue indicates the health checks passed) then you can <code>curl</code> an echo:</p>
+
+<pre><code>$ curl -w '\n' \
+    -D POST \
+    -H 'Content-Type: text/plain' \
+    --data 'Hello' \
+    http://echo-myproject.192.168.64.12.nip.io/echo
+HELLO... Hello.. hello
+</code></pre>
+
+<p>where <code>http://echo-myproject.192.168.64.12.nip.io</code> is the <a href="https://docs.openshift.org/latest/architecture/core_concepts/routes.html">Route</a> host assigned to your <code>echo</code> Service.</p>
+
+<p>That was a good start but since we&rsquo;ve broken the <a href="https://twitter.com/mariofusco/status/612595466593669121">first rule</a> of distributed systems, what happens when the echo <code>chamber</code> service is down? Try this by scaling down the <code>chamber</code> Pod to 0 pods and repeating the <code>curl</code>&hellip;</p>
+
+<iframe width="100%" height="730" src="https://www.youtube.com/embed/Zc93FC1HduY" frameborder="0" allowfullscreen></iframe>
+
+<p>😱 504, hmm. This isn&rsquo;t amateur hour, so let&rsquo;s introduce some production ready features.</p>
+
+<h2 id="hystrix">Hystrix</h2>
+
+<p>Probably one of the biggest issues with synchronous communication patterns, as experienced above when the <code>chamber</code> service was down, is that the upstream services are tightly coupled to the health and welfare of the downstream services. If one if them is having a bad day, so are you.</p>
+
+<p>While we cannot get away from this fact, we can make the life of an upstream service slightly more bearable for the end users. To allow for this, we can implement the following patterns:</p>
+
+<ul>
+<li><em>Bulkheading</em> - so that we can still service traffic reliably by isolating the parts of our application that are affected by a slow or misbehaving collaborator</li>
+<li><em>Circuit breaker</em> - If something&rsquo;s broken, don&rsquo;t call it. If a downstream service is down or throwing errors consistently, then there is not much point in trying to call it repeatedly in quick succession. Rather we&rsquo;ll fail fast and check back every now and then to see if it&rsquo;s recovered.</li>
+<li><em>Fallback</em> - If the downstream service is sinking and we fail fast, let&rsquo;s give our end users something a bit better than a stacktrace.</li>
+</ul>
+
+<p>Fortunately we can lean on the <a href="https://cloud.spring.io/spring-cloud-netflix/">Spring Cloud Netflix</a> project to provide much of this functionality using Ribbon and Hystrix.</p>
+
+<blockquote>
+<p>Switch to the <code>hystrix</code> branch of the source repository to see the changes needed to enable Hystrix.</p>
+
+<p><a href="https://github.com/donovanmuller/echo-example/tree/hystrix">https://github.com/donovanmuller/echo-example/tree/hystrix</a></p>
+</blockquote>
+
+<p>First let&rsquo;s bring in two additional dependencies</p>
+
+<pre><code>...
+
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-starter-ribbon&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;io.fabric8&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-starter-kubernetes-netflix&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-starter-hystrix&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+...
+</code></pre>
+
+<p><code>spring-cloud-starter-hystrix</code> is self explanatory and brings in all we need to make use of the Hystrix functionality.</p>
+
+<h3 id="spring-cloud-kubernetes">Spring Cloud Kubernetes</h3>
+
+<p>The more interesting dependency is <code>spring-cloud-starter-kubernetes-netflix</code>. The Spring Cloud Kubernetes project also <a href="https://github.com/fabric8io/spring-cloud-kubernetes">originated</a> (the project has now moved to the <a href="https://github.com/spring-cloud-incubator/spring-cloud-kubernetes">Spring Cloud Incubator</a>) from the Fabric8 team and provides a way for you to use some of the usual Spring Cloud abstractions, like <code>DiscoveryClient</code>, in an OpenShift/Kubernetes environment using the native service discovery properties present, without the need for Eureka or Consul. This is great because if you are migrating applications to OpenShift/Kubernetes and are already using the Spring Cloud service discovery abstractions, you only have to swop out the Eureka/Consul starters for the relavent Spring Cloud Kubernetes starter.</p>
+
+<p>Let&rsquo;s change our <code>EchoController</code> to use the discovered Service name (<code>http://chamber/chamber</code>) and dispense with the port, as <code>sc-kubernetes</code> will default it to the first port exposed via the Service.</p>
+
+<pre><code>@PostMapping
+@HystrixCommand(fallbackMethod = &quot;noOneHome&quot;)
+String echo(@RequestBody String message) {
+  log.info(&quot;Sending echo message: {}&quot;, message);
+
+  ResponseEntity&lt;String&gt; response = restTemplate
+      .postForEntity(&quot;http://chamber/chamber&quot;, message, String.class);
+
+  return response.getBody();
+}
+
+String noOneHome(String message) {
+  log.warn(&quot;Hmm, looks like no one's home for echoing message [{}] :(&quot;, message);
+
+  return message;
+}
+</code></pre>
+
+<p>Note that we&rsquo;ve also included a fallback method <code>noOneHome</code> that will return the message straight back to the caller if the <code>chamber</code> service is down or returning errors.</p>
+
+<p>We also need to add <code>@EnableCircuitBreaker</code> to our configuration class as well as indicate that our <code>restTemplate</code> bean should be enhanced with Ribbon:</p>
+
+<pre><code>@Configuration
+@EnableCircuitBreaker
+public class EchoConfiguration {
+
+	@Bean
+	@LoadBalanced
+	RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
+}
+</code></pre>
+
+<p>Let&rsquo;s test this by deploying the upgraded echo service:</p>
+
+<blockquote>
+<p>At this point you must give the default <a href="https://docs.openshift.org/latest/dev_guide/service_accounts.html">Service Account</a> the <code>cluster-reader</code> role so that <code>sc-kubernetes</code> can integrate the OpenShift API. Do this with the following <code>oc</code> command: <code>oc policy add-role-to-user cluster-reader system:serviceaccount:myproject:default</code>.</p>
+</blockquote>
+
+<pre><code>$ mvn clean fabric8:deploy
+</code></pre>
+
+<p>wait for the deployments to finish rolling and with the <code>chamber</code> service with one replica, <code>curl</code> another test:</p>
+
+<pre><code>$ curl -w '\n' \
+    -D POST \
+    -H 'Content-Type: text/plain' \
+    --data 'Hello' \
+    http://echo-myproject.192.168.64.12.nip.io/echo
+HELLO... Hello.. hello
+</code></pre>
+
+<p>still working. Now scale down the <code>chamber</code> Pod again and retest:</p>
+
+<pre><code>$ curl -w '\n' \
+    -D POST \
+    -H 'Content-Type: text/plain' \
+    --data 'Hello' \
+    http://echo-myproject.192.168.64.12.nip.io/echo
+Hello
+</code></pre>
+
+<p>We got a quick response with our fallback value.
+Much better than the vanilla version! 👍</p>
+
+<h2 id="feign">Feign</h2>
+
+<p>Just for completeness, let&rsquo;s look at a third example using a <a href="http://cloud.spring.io/spring-cloud-netflix/spring-cloud-netflix.html#spring-cloud-feign">Feign</a> client.</p>
+
+<p>Feign allows you to write interfaces annotated with Spring MVC annotations which are then used to build the actual client request. I.e. you call methods on an injected interface which are proxies to actual HTTP requests. For example, this allows you to author an API client library and distribute to your consumers, freeing them of the burden of having to write their own bindings.</p>
+
+<p>This approach sounds good but can further couple your services together and additionally add a healthy dose of distributed dependency management hell to the mix. Tradeoffs 🤔.</p>
+
+<blockquote>
+<p>Switch to the <code>feign</code> branch of the source repository to see the changes needed to use a declarative Feign interface.</p>
+
+<p><a href="https://github.com/donovanmuller/echo-example/tree/feign">https://github.com/donovanmuller/echo-example/tree/feign</a></p>
+</blockquote>
+
+<p>Let&rsquo;s look at our Feign annotated interface:</p>
+
+<pre><code>@FeignClient(name = &quot;chamber&quot;, fallback = Echo.EchoFallback.class)
+public interface Echo {
+
+	@PostMapping
+	String send(String message);
+
+	@Component
+	class EchoFallback implements Echo {
+
+		private static final Logger log = LoggerFactory.getLogger(EchoFallback.class);
+
+		@Override
+		public String send(String message) {
+			log.warn(&quot;Hmm, looks like no one's home for echoing message [{}] :(&quot;,
+					message);
+
+			return message;
+		}
+	}
+}
+</code></pre>
+
+<p>This interface essentially mimics the <code>restTemplate</code> URL used before. I.e. <code>http://chamber/chamber</code>. It also includes an identical fallback method <code>noOneHome</code>.</p>
+
+<p>Our <code>EchoController</code> has lost allot of fat:</p>
+
+<pre><code>@RestController
+@RequestMapping(&quot;/echo&quot;)
+public class EchoController {
+
+	private static final Logger log = LoggerFactory.getLogger(EchoController.class);
+
+	private Echo echo;
+
+	public EchoController(Echo echo) {
+		this.echo = echo;
+	}
+
+	@PostMapping
+	String echo(@RequestBody String message) {
+		log.info(&quot;Sending echo message: {}&quot;, message);
+
+		return echo.send(message);
+	}
+}
+</code></pre>
+
+<p>as well as our configuration:</p>
+
+<pre><code>@Configuration
+@EnableCircuitBreaker
+@EnableFeignClients
+public class EchoConfiguration {
+
+}
+</code></pre>
+
+<p>and our <code>pom.xml</code> has the <code>spring-cloud-starter-feign</code> included</p>
+
+<pre><code>...
+
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-starter-hystrix&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-cloud-starter-feign&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;io.fabric8&lt;/groupId&gt;
+                &lt;artifactId&gt;fabric8-maven-plugin&lt;/artifactId&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;id&gt;fmp&lt;/id&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;resource&lt;/goal&gt;
+                            &lt;goal&gt;build&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+                &lt;configuration&gt;
+                    &lt;resources&gt;
+                        &lt;env&gt;
+                            &lt;!-- Must explicitly enable Hystrix support for Feign --&gt;
+                            &lt;!-- see http://cloud.spring.io/spring-cloud-netflix/spring-cloud-netflix.html#spring-cloud-feign-hystrix --&gt;
+                            &lt;FEIGN_HYSTRIX_ENABLED&gt;true&lt;/FEIGN_HYSTRIX_ENABLED&gt;
+                        &lt;/env&gt;
+                    &lt;/resources&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/project&gt;
+</code></pre>
+
+<p>Note the <code>&lt;resources&gt;...&lt;env&gt;</code> section under the <code>fabric8-maven-plugin</code> section. This adds an environment variable of <code>FEIGN_HYSTRIX_ENABLED=true</code> to the container when run in OpenShift. By default, Hystrix will not be enabled when using Feign, therefore you must <a href="http://cloud.spring.io/spring-cloud-netflix/spring-cloud-netflix.html#spring-cloud-feign-hystrix">explicitly enable it</a>.</p>
+
+<p>Deploy and test</p>
+
+<pre><code>$ curl -w '\n' \
+    -D POST \
+    -H 'Content-Type: text/plain' \
+    --data 'Hello' \
+    http://echo-myproject.192.168.64.12.nip.io/echo
+HELLO... Hello.. hello
+</code></pre>
+
+<p>All good! 👍
+You can test the failure case and observe the same result when using <code>RestTemplate</code> and Hystrix.</p>
+
+<iframe width="100%" height="730" src="https://www.youtube.com/embed/2WWRarmdxDY" frameborder="0" allowfullscreen></iframe>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>This quick example showed three ways we could achieve synchronous HTTP based communication between microservices running in OpenShift.</p>
+
+<ol>
+<li>Using vanilla <code>RestTemplate</code> we could invoke our downstream service by reference it&rsquo;s Service name. The service being down (0 Pods running) caused massive delays.</li>
+<li>Using Hystrix with Spring Cloud Kubernetes gave us improved discovery, where we only had to reference the Service name and we gained effective timeout and fallback capability from Hystrix. Production here we come&hellip; come.. come.</li>
+<li>For those into writing distributable client APIs, we also showed an equivalent Feign based implementation.</li>
+</ol>
+
+<p>Hopefully you also saw how easy the Fabric8 Maven tooling made deploying Spring Boot applications to OpenShift. We&rsquo;ve only scratched the surface of what the tooling offers. One feature that is particularly awesome is the ability to watch for local changes (<code>mvn fabric8:watch</code> and reload the Spring Boot application running in OpenShift. Perhaps a more in depth post is in order&hellip;</p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

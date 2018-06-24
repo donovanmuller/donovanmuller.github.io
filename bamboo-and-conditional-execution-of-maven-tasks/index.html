@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Bamboo and conditional execution of Maven tasks &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>Bamboo and conditional execution of Maven tasks</h1>
+  <span class="post-date">Wed, Dec 23, 2015</span>
+  
+
+<p>Atlassian Bamboo is a great build server, however, if you, as part of your Git feature branch development workflow come across the situation where you want to skip Maven deployment for your plan branches but currently can&rsquo;t configure that out of the box, read on&hellip;</p>
+
+<h2 id="the-problem">The problem</h2>
+
+<p>We have some client libraries that are shared across multiple applications and we use Maven for our Java builds. These libraries are brought in via the normal Maven dependency management and therefore are deployed to an internal Nexus Maven repository.</p>
+
+<p>A typical flow to get the shared library into our Nexus repository is to get Maven to build the <code>.jar</code> artifact (<code>package</code>/<code>install</code>) and then run the <code>deploy</code> goal to upload that to Nexus.</p>
+
+<h3 id="ba-m-dboo">Ba<del>m</del>dboo</h3>
+
+<p>As I&rsquo;ve mentioned, Bamboo is a great CI server and has most of the features you&rsquo;ll ever need. However, one area where it falls short is when you need to specifically disable Bamboo build plan jobs/tasks on plan branches. I.e. you want a job/task to run on your master branch but skip it when running feature branch builds.</p>
+
+<h4 id="the-master-plan">The master plan</h4>
+
+<p>If you follow the Git <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow">feature branch</a> development workflow, you&rsquo;ll create a new branch off of your master branch to add new features etc. The idea being that once you&rsquo;re happy with your changes, you&rsquo;ll push your commits on your feature branch up to your remote Git server (we use <del>Stash</del>Bitbicket Server) and create a <a href="https://confluence.atlassian.com/stash/using-pull-requests-in-stash-299570995.html">Pull Request</a>.</p>
+
+<p>Then, as part of your CI pipeline, you should be kicking off an automated build of your feature branch at this point. We have a process whereby feature branches are only eligible for merging (via a Pull Request) into master branch if they have met some prerequisites, one of those being that there should be at least one successful build of our feature branch.</p>
+
+<p>So how does this look on Bamboo?
+First you would create a build plan for your client library&rsquo;s master branch. This plan would include stages with jobs for code checks, run all tests, package up the <code>.jar</code> artifact and deploy to our Nexus repo. Below is a screenshot of such a build plan:</p>
+
+<p><img src="build-plan-master-1.png" alt="" /></p>
+
+<p>All of these jobs include checking out the source and a Maven task for running the corresponding Maven goal. For instance the goal to deploy to Nexus is below:</p>
+
+<p><img src="build-plan-master-deploy-job.png" alt="" /></p>
+
+<p>This build plan configuration is generally configured to use the master branch from our linked repository. So how do we configure Bamboo to build feature branches for our Client library as well?</p>
+
+<h4 id="plan-branches">Plan branches</h4>
+
+<p>Bamboo makes picking up feature branches and building them extremely easy (Only tested with <del>Stash</del>Bitbucket Server). All you have to do is click on the <em>configuration</em> link under the <em>Branches</em> tab of your build plan configuration and tick the <em>Create plan branches for branches detected in the repository</em> checkbox:</p>
+
+<p><img src="build-plan-branch-config.png" alt="" /></p>
+
+<p>After this, every time you push a new branch to your Git repo, Bamboo will automatically create a plan branch configuration for your feature branch. This plan branch basically inherits all the stages and jobs from the &ldquo;master&rdquo; build plan. I.e. the build plan for your feature branch will be exactly the same as for your master branch. Which makes sense&hellip;</p>
+
+<h4 id="the-crux-of-the-matter">The crux of the matter</h4>
+
+<p>However, therein lies the problem.
+With this behaviour it means that <strong>any</strong> build of your client library will deploy to Nexus, even your feature branch builds.</p>
+
+<p>This is not what you want because new features that might break other projects, incomplete implementations or unapproved (Pull requests should generally be reviewed before merging) changes will be deployed to Nexus.
+You only want your master branch being deployed to Nexus when all checks have been done, changes verified or in the event of a release. This problem becomes even worse in a CD pipeline when you have child plan dependencies on your client library.</p>
+
+<h2 id="the-solution">The solution</h2>
+
+<p>There is a JIRA issue (<a href="https://jira.atlassian.com/browse/BAM-11257">BAM-11257</a>) for adding conditional support to plan branches which should solve this in a native way but for an immediate solution, there are workarounds <a href="https://answers.atlassian.com/questions/144064/answers/4040501">here</a>, <a href="http://stackoverflow.com/a/27818441/2408961">here</a> and a <a href="https://marketplace.atlassian.com/plugins/org.valens.dynamicPlans/server/overview">plugin</a> that could help solve this problem.</p>
+
+<h3 id="our-solution">Our solution</h3>
+
+<p>Based on <a href="http://stackoverflow.com/a/27818441/2408961">this</a> workaround I came up with a solution that skips deploying to Nexus on plan branches within Bamboo and also prevents developers from uploading (<code>mvn deploy</code>) to Nexus by mistake from their local machines.</p>
+
+<h4 id="a-master-build-profile">A master build profile</h4>
+
+<p>It&rsquo;s really quite simple, basically we add a Maven profile that is activated when a certain property&rsquo;s value is <code>master</code>. This profile enables (un-skips) the <code>maven-deploy-plugin</code> which is skipped by default.</p>
+
+<p>Below is an example of a <code>pom.xml</code> with the above <code>master-build</code> profile:</p>
+
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;
+         xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+         xsi:schemaLocation=&quot;http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    ...
+
+    &lt;profiles&gt;
+        &lt;profile&gt;
+            &lt;id&gt;master-build&lt;/id&gt;
+            &lt;activation&gt;
+                &lt;activeByDefault&gt;false&lt;/activeByDefault&gt;
+                &lt;property&gt;
+                    &lt;name&gt;bamboo.planRepository.branchName&lt;/name&gt;
+                    &lt;value&gt;master&lt;/value&gt;
+                &lt;/property&gt;
+            &lt;/activation&gt;
+
+            &lt;build&gt;
+                &lt;plugins&gt;
+                    &lt;plugin&gt;
+                        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                        &lt;artifactId&gt;maven-deploy-plugin&lt;/artifactId&gt;
+                        &lt;version&gt;2.8.2&lt;/version&gt;
+                        &lt;configuration&gt;
+                            &lt;skip&gt;false&lt;/skip&gt;
+                        &lt;/configuration&gt;
+                    &lt;/plugin&gt;
+                &lt;/plugins&gt;
+            &lt;/build&gt;
+        &lt;/profile&gt;
+    &lt;/profiles&gt;
+
+    ...
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-deploy-plugin&lt;/artifactId&gt;
+                &lt;version&gt;2.8.2&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;skip&gt;true&lt;/skip&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+
+&lt;/project&gt;
+</code></pre>
+
+<p>On your local machine, if you run the deploy task without anything else:</p>
+
+<pre><code>$ mvn deploy
+</code></pre>
+
+<p>You will see that the deploy goal is skipped:</p>
+
+<pre><code>...
+[INFO] --- maven-install-plugin:2.4:install (default-install) @ client-library ---
+[INFO] Installing ...
+[INFO] 
+[INFO] --- maven-deploy-plugin:2.8.2:deploy (default-deploy) @ client-library ---
+[INFO] Skipping artifact deployment
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+</code></pre>
+
+<p>If you want to deploy the built artifact to Nexus from your local machine or if you want to test how it will work on Bamboo, then run the deploy goal but with our property set to master:</p>
+
+<pre><code>$ mvn deploy -Dbamboo.planRepository.branchName=master
+</code></pre>
+
+<p>which will upload to Nexus:</p>
+
+<pre><code>[INFO] --- maven-install-plugin:2.4:install (default-install) @ client-library ---
+[INFO] Installing ...
+[INFO] 
+[INFO] --- maven-deploy-plugin:2.8.2:deploy (default-deploy) @ client-library ---
+Downloading: ...
+Downloaded: ...
+Uploading: ...
+Uploaded: ...
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+</code></pre>
+
+<h4 id="bamboo-ify-it">Bamboo-ify it</h4>
+
+<p>Great, so we now have a conditional deployment based on the presence of a property value. All we need to do now is configure our deployment job to pass in the value for our property.</p>
+
+<p>Bamboo has many <a href="https://confluence.atlassian.com/bamboo/bamboo-variables-289277087.html">built in variables</a> that you can include in your task configurations.
+We need a variable that evaluates to the current branch. That way, when we are building master branch for example, the variable&rsquo;s value will be &ldquo;master&rdquo; which we can then set as our property for our Maven deployment goal and which will then enable the deployment to Nexus. If we are building a feature branch, then the value will not be &ldquo;master&rdquo; and deployment will be skipped.</p>
+
+<p>Luckily there is a <code>bamboo.planRepository.branchName</code> variable we can use that does exactly this (I cheated and used the same name for my Maven property). Let&rsquo;s see how we can add this to our task configuration:</p>
+
+<p><img src="build-plan-deploy-config.png" alt="" /></p>
+
+<p>Now when this task runs, the <code>${bamboo.planRepository.branchName}</code> variable will evaluate to the current branch name and depending on what it is, it will either deploy to Nexus if the branch is <code>master</code> or skip deployment if the branch is anything else.</p>
+
+<h2 id="bamboosion">Bamboosion</h2>
+
+<p>In conclusion, like anything else in computing, there are many ways to carve a bamboo shoot. The <a href="https://marketplace.atlassian.com/plugins/org.valens.dynamicPlans/server/overview">plugin</a> mentioned before looks very promising and would mean no changes to you Maven setup. I might have a look at this in future&hellip;</p>
+
+<p>However, our current solution does work nicely and has the benefit of preventing local deployments by mistake (even though you could probably prevent this with user permissions etc. as well) but I digress.</p>
+
+<p>We&rsquo;ve used it to enable conditional execution of our deploy task but the same principle can be applied to other goals as well.</p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>
