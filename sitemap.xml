@@ -18,6 +18,16 @@
   </url>
   
   <url>
+    <loc>https://donovanmuller.blog/a-take-on-application-groups-with-spring-cloud-data-flow/</loc>
+    <lastmod>2016-11-12T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://donovanmuller.blog/introducing-standalone-applications-to-spring-cloud-data-flow/</loc>
+    <lastmod>2016-10-02T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://donovanmuller.blog/openshift-cluster-up-with-docker-for-mac/</loc>
     <lastmod>2016-09-21T00:00:00+00:00</lastmod>
   </url>

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>A take on Application Groups with Spring Cloud Data Flow &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>A take on Application Groups with Spring Cloud Data Flow</h1>
+  <span class="post-date">Sat, Nov 12, 2016</span>
+  
+
+<p>This post introduces a take on the upcoming application group feature in Spring Cloud Data Flow / Spring Cloud Deployer, allowing multiple streams, tasks and standalone applications to be defined and deployed as an atomic unit.</p>
+
+<blockquote>
+<p>This feature is not implemented in the official Spring Cloud Data Flow or Spring Cloud Deployer projects. The application group feature discussed in this post is implemented as a custom external feature.</p>
+</blockquote>
+
+<p>This implementation of the application group feature is probably slightly different to what the official feature will end up being implemented as. For one, <a href="https://github.com/donovanmuller/spring-cloud-dataflow/tree/update">this implementation</a> is realised <em>in</em> the Spring Cloud Data Flow project and not as part of the Spring Cloud Deployer project (the GitHub issue tracking the official feature is <a href="https://github.com/spring-cloud/spring-cloud-deployer/issues/99">spring-cloud-deployer#99</a>).</p>
+
+<p><em>This feature builds on the standalone application type discussed in <a href="https://blog.switchbit.io/introducing-standalone-applications-to-spring-cloud-data-flow/">this post</a> with the proposal <a href="https://github.com/spring-cloud/spring-cloud-dataflow/issues/915">here</a>.</em></p>
+
+<h2 id="application-group">Application Group</h2>
+
+<p>So what exactly is an Application Group?</p>
+
+<p>In the context of this custom feature, an <em>Application Group</em> is a container for multiple streams, tasks and standalone application types, that can be defined and deployed as an atomic unit.</p>
+
+<p>For example, an Application Group could represent all the streams, tasks and/or standalone definitions that logically belong or are related to each other and possibly could not function without each other. Conceptually equivalent to a JavaEE .ear file.</p>
+
+<h2 id="defining-an-application-group">Defining an Application Group</h2>
+
+<p>An Application Group can be utilised in the following two ways:</p>
+
+<h3 id="dsl-via-the-spring-cloud-data-flow-shell">DSL via the Spring Cloud Data Flow Shell</h3>
+
+<p>The DSL has been extended to support the definition of an Application Group. The syntax for defining an Application Group looks like this:</p>
+
+<pre><code>dataflow:&gt;application-group create \
+  --name test-group \
+  --definition &quot;stream: ticktock &amp; stream: anotherstream&quot;
+</code></pre>
+
+<p>where <code>stream: ticktock</code> represents the type of application (<code>stream:</code>) and the name of the application definition (<code>ticktock</code>). These apps must be registered as per usual Data Flow semantics and the definitions must exist <em>prior</em> to defining the application group.</p>
+
+<p>Multiple application types are supported by separating the references by the <code>&amp;</code> symbol. In the example above, the Application Group would consist of two stream definitions.</p>
+
+<p>Deploying the Application Group would be consistent with existing application type. For example, to deploy the <code>test-group</code> Application Group defined above, you would execute the following:</p>
+
+<pre><code>dataflow:&gt;application-group deploy test-group
+</code></pre>
+
+<p>this would result in both <code>ticktock</code> <em>and</em> <code>anotherstream</code> streams being deployed as an atomic unit.</p>
+
+<h3 id="application-group-descriptor-project">Application Group Descriptor project</h3>
+
+<p>An Application Group Descriptor project is simply a Maven project that contains a descriptor file called <code>application-group.yml</code> by convention.</p>
+
+<p>This descriptor file contains the details of the applications that should be registered, as well as the definitions of the streams, tasks and standalone applications that should be created and deployed. Some of the benefits of using the descriptor project are:</p>
+
+<ul>
+<li>Serves as a signed off or approved artifact that represents the optimal combination of app versions and definitions that implement a specific requirement</li>
+<li>In combination with the Spring Cloud Data Flow Maven Plugin (see below), allows easy deployment of Application Groups via CI/CD tools etc.</li>
+<li>Provides a convenient way of deploying a combination of app versions and definitions for the purpose of end to end testing</li>
+<li>Application Group Descriptor projects make Spring Cloud Data Flow based implementations portable amongst teams. Much the same way Docker images allow for portable runtimes.</li>
+</ul>
+
+<p>The file has the following structure:</p>
+
+<pre><code># The 'apps' section translates directly into 'dataflow:&gt;app import --uri ...'
+# Each app listed will be imported as part of this application group.
+# See http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/html/spring-cloud-dataflow-register-apps.html
+apps:
+  - name: time-source
+    type: source
+    uri:  time-source-kafka
+  - name: timezone-processor
+    type: processor
+    uri:  timezone-processor-kafka
+  - name: log-sink
+    type: sink
+    uri:  log-sink-kafka
+  - name: timely-events
+    type: standalone
+    uri:  timely-events
+
+# The 'standalone' section translates directly into 'dataflow:&gt;standalone create ...'
+# See https://blog.switchbit.io/introducing-standalone-applications-to-spring-cloud-data-flow
+# for more on the standalone application type
+standalone:
+  - name: timely-events
+    dsl: timely-events --server.port=8080
+
+# The 'stream' section translates directly into 'dataflow:&gt;stream create ...'
+# Each stream listed below will be created and deployed.
+# See the 'deploymentProperties' section under the 'spring-cloud-dataflow-maven-plugin'
+# configuration section in the 'pom.xml.'
+# See http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/html/spring-cloud-dataflow-create-stream.html
+stream:
+  - name: timely-stream
+    dsl: time-source | timezone-processor --timezone=Africa/Johannesburg | log-sink
+</code></pre>
+
+<p>The Application Group Descriptor project is used in conjunction with the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-maven-Plugin">Spring Cloud Data Flow Maven plugin</a> which applies the descriptor file to a Data Flow server.</p>
+
+<h3 id="spring-cloud-data-flow-maven-plugin">Spring Cloud Data Flow Maven plugin</h3>
+
+<p>The Spring Cloud Data Flow plugin supports Application Group Descriptor projects and allows you to deploy the Application Group defined within to a Data Flow server instance.</p>
+
+<p>Application Group deployment is facilitated by two complementary Maven goals:</p>
+
+<ul>
+<li><code>application-group-processor</code> - which parses the descriptor file (<code>application-group.yml</code>) and expands shorthand URI references using Maven dependency resolution.</li>
+<li><code>deploy</code> - which invokes the <code>/application-groups/definitions</code> resource endpoint to create and deploy the Application Group</li>
+</ul>
+
+<blockquote>
+<p>This post will <em>exclusively use this plugin</em> to deploy the Application Group which is the subject of the demo application. DSL usage via the Shell is left as an exercise for the reader.</p>
+</blockquote>
+
+<h2 id="prerequisite-features">Prerequisite features</h2>
+
+<p>To facilitate the deployment of Application Groups using the Spring Cloud Maven Plugin, the following two additional features have been added to the Spring Cloud Deployer and Spring Cloud Data Flow projects. These features together enable incremental deployment of Application Groups. These features are:</p>
+
+<ul>
+<li>a <code>redeploy</code> method added to Spring Cloud Deployer to redeploy applications that are already deployed.</li>
+<li>an <code>update</code> option added to stream, task and standalone application types. This allows existing definitions to be updated and optionally redeployed using the above redeploy feature.</li>
+</ul>
+
+<p>Both these features are crucial when using the Maven plugin to allow incremental development and testing of Data Flow based applications.</p>
+
+<h2 id="a-timely-demo">A timely demo</h2>
+
+<p>As a way to walk through the new Application Group feature, we&rsquo;ll develop a fairly contrived demo application consisting of multiple streams, a task and a standalone application. This demo application will perform the intricate task of converting times from one timezone to another.</p>
+
+<h3 id="streams">Streams</h3>
+
+<p>The primary stream will consist of the following applications:</p>
+
+<ul>
+<li>the out-of-the-box <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/time/spring-cloud-starter-stream-source-time">Time Source</a> application  to generate a steady flow of times</li>
+<li>a custom timezone conversion processor</li>
+<li>and the out-of-the-box <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/log/spring-cloud-starter-stream-sink-log">Log Sink</a> application to log the converted times</li>
+</ul>
+
+<p><img src="timely-stream-diagram.png" alt="timely-stream definition" /></p>
+
+<p>Other supporting stream definitions will also be created.</p>
+
+<h3 id="task">Task</h3>
+
+<p>The task will be implemented as a Spring Batch job that will ingest a file containing times (one per line) and convert them to a specified timezone, writing them to another file. The task will be triggered every 60 seconds via the out-of-the-box <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/triggertask/spring-cloud-starter-stream-source-triggertask">Trigger Task Source</a>.</p>
+
+<h3 id="standalone">Standalone</h3>
+
+<p>We&rsquo;d also like to be able to get notified when the task to convert times has started and when it&rsquo;s completed. That&rsquo;s why we&rsquo;ll be deploying a standalone <a href="https://cloud.spring.io/spring-cloud-stream/">Spring Cloud Stream</a> based web app that consumes from a channel where <a href="http://docs.spring.io/spring-cloud-task/docs/current/reference/htmlsingle/#stream-integration-batch-events">Spring Batch events</a> will be emmitted by our task. Then we can stream those events to an HTTP client using a <a href="http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#mvc-ann-async-sse">Server Side Events</a> based Spring MVC endpoint.</p>
+
+<h3 id="tools-and-runtimes">Tools and runtimes</h3>
+
+<p>In the development of our timely demo application we&rsquo;ll be using the following development tools and runtime environments:</p>
+
+<h4 id="spring-cloud-data-flow-maven-plugin-1">Spring Cloud Data Flow Maven Plugin</h4>
+
+<p>We&rsquo;ll implement the requirements incrementally with the help of the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-maven-plugin">Spring Cloud Data Flow Maven Plugin</a>. The Maven plugin will allow us to register, define and deploy streams, tasks and standalone applications without having to leave our IDE or command line.</p>
+
+<h4 id="local-deployer">Local Deployer</h4>
+
+<p>The built in <a href="https://github.com/spring-cloud/spring-cloud-deployer-local">local deployer</a> will be used for running our demo applications. Standing up a local server instance will be described below.</p>
+
+<h2 id="time-to-start">Time to start</h2>
+
+<p>Enough waffling, let&rsquo;s get stuck into some code.</p>
+
+<p>We will use a single multi-module Maven project for this demo application with each milestone in our development expressed in it&rsquo;s own Git branch. To save some, ahem&hellip;  time, I&rsquo;ve already put together the basic project structure and the most basic implementation of our primary stream. So go ahead and clone this GitHub repository which contains all the source code for this demo application:</p>
+
+<pre><code>$ git clone https://github.com/donovanmuller/timely-application-group.git
+</code></pre>
+
+<p>You&rsquo;ll notice there is one module called <code>application-goup</code>. This module is the Application Group Descritor and contains the <a href="https://github.com/donovanmuller/timely-application-group/blob/master/application-group/src/main/resources/application-group.yml"><code>application-group.yml</code></a> descriptor file. We&rsquo;ll dig into that in a bit but first have a look at the <code>pom.xml</code>:</p>
+
+<pre><code>    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;io.switchbit&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-cloud-dataflow-maven-plugin&lt;/artifactId&gt;
+                &lt;configuration&gt;
+					&lt;!-- These deployment properties will be passed to the relevant streams on deployment --&gt;
+                    &lt;deploymentProperties&gt;
+                    &lt;/deploymentProperties&gt;
+                &lt;/configuration&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;goals&gt;
+							&lt;!-- This goal parses the 'application-group.yml' descriptor file and
+							builds the app resource URI's if 'artifactId' are referenced as well as basic
+							validation of the structure of the descriptor file.
+							--&gt;
+                            &lt;goal&gt;application-group-processor&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+</code></pre>
+
+<p>where we add the Spring Cloud Data Flow Maven Plugin. The <code>&lt;deploymentProperties&gt;</code> configuration item is analogous to <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/index.html#_deployment_properties">deployment properties</a> you would define when deploying through the Shell or UI. Also, note the <code>&lt;goal&gt;application-group-processor&lt;/goal&gt;</code> goal, which parses the application group descriptor.</p>
+
+<h3 id="application-group-descriptor">Application Group Descriptor</h3>
+
+<p>The descriptor file is the heart and soul of an Application Group Descriptor project and what the Spring Cloud Data Flow Maven Plugin parses and applies when invoking the <code>/application-groups/definitions</code> endpoint on a Spring Cloud Data Flow server.</p>
+
+<p>If you look at <code>src/main/resources/application-group.yml</code>, it has the following structure so far:</p>
+
+<pre><code>apps:
+  - name: time-source
+    type: source
+    uri:  time-source-kafka
+  - name: log-sink
+    type: sink
+    uri:  log-sink-kafka
+
+stream:
+  - name: timely-stream
+    dsl: time-source | log-sink
+</code></pre>
+
+<p>The sections in the descriptor relate directly to the commands you would execute when defining a stream using the shell or UI.</p>
+
+<h4 id="apps"><code>apps:</code></h4>
+
+<p>The <code>apps</code> section lists the apps that will be imported/registered as part of the deployment. The properties, <code>name</code>, <code>type</code> and <code>uri</code> map directly to the same way you would register an app with the <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/index.html#_stream_dsl">DSL</a>. For example, the DSL equivalent of the above <code>app</code> section in the descriptor would be look like:</p>
+
+<pre><code>dataflow:&gt;app import --name time-source --type source --uri maven://org.springframework.cloud.stream.app:time-source-kafka:1.0.4.RELEASE
+dataflow:&gt;app import --name log-sink ...
+</code></pre>
+
+<p>Note however that the <code>uri</code> property is not the fully qualified Maven URI of <code>maven://org.springframework.cloud.stream.app:time-source-kafka:1.0.4.RELEASE</code> but rather, contains what is the <code>artifactId</code> in the <code>pom.xml</code>. I.e. <code>time-source-kafka</code>. It is the <code>application-group-processor</code> goal, mentioned briefly above, that expands the <code>artifactId</code> to the fully qualified URI property as the descriptor is parsed. It does this by looking at the dependencies section in the POM and expanding the URI based on the matching <code>groupId</code> and <code>version</code>. This has the benefit of enforcing that the apps being registered are resolvable artifacts.</p>
+
+<blockquote>
+<p>If you provide the fully qualified form of the URI the expansion will not be applied. This allows the descriptor to support other resource types like <code>docker://</code> and <code>file://</code>.</p>
+</blockquote>
+
+<h4 id="stream"><code>stream:</code></h4>
+
+<p>As with the <code>apps</code> section, the <code>stream</code> section maps directly to how you would define streams using the DSL. I.e. the above definition in the descriptor is exactly the same as this command in the Shell:</p>
+
+<pre><code>dataflow:&gt;stream create --name timely-stream --definition &quot;time-source | log-sink&quot;
+</code></pre>
+
+<h3 id="deploying-the-application-group">Deploying the Application Group</h3>
+
+<p>Now that we&rsquo;ve got our Application Group defined in our descriptor project, it&rsquo;s time to deploy it to a Local deployer based Spring Cloud Data Flow server instance.</p>
+
+<h4 id="kafka-to-bind-them">Kafka to bind them</h4>
+
+<p>Before we can deploy our Application Group we need a binder instance to provide the messaging middleware. For this sample application we&rsquo;ll use Kafka.</p>
+
+<p>Using Docker is probably the easiest way to stand up a Kafka instance for testing, so let&rsquo;s stand up a Kafka 0.8 container with:</p>
+
+<pre><code># substitute en0 with the relavent interface on your machine
+$ docker run \
+  -p 2181:2181 \
+  -p 9092:9092 \
+  --env ADVERTISED_HOST=`ipconfig getifaddr en0` \
+  --env ADVERTISED_PORT=9092 \
+  spotify/kafka
+...
+2016-11-08 09:17:09,215 INFO success: zookeeper entered RUNNING state, process has stayed up for &gt; than 1 seconds (startsecs)
+2016-11-08 09:17:09,215 INFO success: kafka entered RUNNING state, process has stayed up for &gt; than 1 seconds (startsecs)
+</code></pre>
+
+<h4 id="spring-cloud-data-flow-server-local">Spring Cloud Data Flow Server Local</h4>
+
+<p>Now that we have a binder up we need an instance of the Spring Cloud Data Flow Server Local running. To stand up an instance download the built binary and run it:</p>
+
+<pre><code>$ wget https://github.com/donovanmuller/spring-cloud-dataflow/releases/download/v1.1.0.APPLICATION-GROUPS-SNAPSHOT/spring-cloud-dataflow-server-local-1.1.0.BUILD-SNAPSHOT.jar
+$ java -jar spring-cloud-dataflow-server-local-1.1.0.BUILD-SNAPSHOT.jar \
+  --spring.cloud.dataflow.features.application-groups-enabled=true
+</code></pre>
+
+<p>Note that you have to enable the application group feature (<code>--spring.cloud.dataflow.features.application-groups-enabled=true</code>) as it&rsquo;s disabled by default. Enabling the <code>application-groups</code> feature also implicitly enables the <a href="https://blog.switchbit.io/introducing-standalone-applications-to-spring-cloud-data-flow/">standalone-application</a> feature.</p>
+
+<h4 id="deploy-all-the-things">Deploy all the things!</h4>
+
+<p>All the infrastructure bits are now ready so we can deploy our Application Group. Simply issue the following command in the root of the demo application:</p>
+
+<pre><code>$ ./mvnw scdf:deploy
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] timely-application-group-parent
+[INFO] timely-application-group
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building timely-application-group-parent 1.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+...
+[INFO] --- spring-cloud-dataflow-maven-plugin:1.1.0.BUILD-SNAPSHOT:deploy (default-cli) @ application-group ---
+[INFO] Importing application group: timely-application-group
+[INFO] Waiting for application to deploy...
+[INFO] Waiting for application to be deployed, currently 'deployed'
+[INFO] Application 'timely-application-group' deployed successfully
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary:
+[INFO] 
+[INFO] timely-application-group-parent .................... SUCCESS [  0.848 s]
+[INFO] timely-application-group ........................... SUCCESS [ 32.995 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+...
+</code></pre>
+
+<p>The plugin will use the default server URI of <code>http://localhost:9393</code> and invoke the RESTful API of the Data Flow server.</p>
+
+<p>Let&rsquo;s verify what the plugin did by using the <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_deploying_local">Shell</a>.
+First download the Shell and run it (also connecting to the default server URI) with:</p>
+
+<pre><code>$ wget https://github.com/donovanmuller/spring-cloud-dataflow/releases/download/v1.1.0.APPLICATION-GROUPS-SNAPSHOT/spring-cloud-dataflow-shell-1.1.0.BUILD-SNAPSHOT.jar
+$ java -jar spring-cloud-dataflow-shell-1.1.0.BUILD-SNAPSHOT.jar
+</code></pre>
+
+<p>first let&rsquo;s check the apps registered and the Application Group created. The Application Group deployment facilitated the registration of our two apps and created the <code>timely-stream</code> stream definition which was subsequently deployed:</p>
+
+<p><img src="app-group-deployment-simple-1.png" alt="application group deployed" /></p>
+
+<p>and we can see that the stream is functioning properly by tailing the logs of the Log Sink:</p>
+
+<pre><code>$ tail -fn500 /var/folders/79/c5g_bfkn74d_155b5cpl39q40000gn/T/spring-cloud-dataflow-7009934638099955715/timely-stream-1478597482866/timely-stream.log-sink/stdout_0.log
+...  INFO 53320 --- [ kafka-binder-1] log.sink                                 : 11/08/16 11:36:19
+...  INFO 53320 --- [ kafka-binder-1] log.sink                                 : 11/08/16 11:36:20
+...  INFO 53320 --- [ kafka-binder-1] log.sink                                 : 11/08/16 11:36:21
+</code></pre>
+
+<p>feel free to <strong>let this stream run in the background</strong> as we continue&hellip;</p>
+
+<h2 id="adding-the-timezone-processor">Adding the timezone processor</h2>
+
+<p>We&rsquo;ve got off to a good start with the <code>timely-stream</code> spewing out the time every second but our requirement was to convert the times to a specified timezone. We&rsquo;ll implement this with a custom <code>timezone-processor</code>. To save some time, this processor has already been implemented on the <code>timezone-processor</code> Git branch, so switch to that branch now:</p>
+
+<pre><code>$ git checkout timezone-processor
+</code></pre>
+
+<p>You&rsquo;ll notice there is a new module called <code>timezone-processor-kafka</code>. All it does is take in the String representing the current time originating from the Time Source app and converts it to a configured (via an <a href="https://github.com/donovanmuller/timely-application-group/blob/timezone-processor/timezone-processor-kafka/src/main/java/io/switchbit/TimezoneConfigurationProperties.java#L8">application property)</a> timezone. Then the converted time, as a formatted String representation, is sent out on the default <code>Processor.OUTPUT</code> channel. There&rsquo;s nothing much else to it, feel free to <a href="https://github.com/donovanmuller/timely-application-group/blob/timezone-processor/timezone-processor-kafka/src/main/java/io/switchbit/TimezoneProcessor.java">browse the code</a> for more detail.</p>
+
+<p>Of course, the processor also needs to be added to the <code>timely-stream</code> definition in the descriptor file. This has also been done and now looks like this:</p>
+
+<pre><code>apps:
+  - name: time-source
+    type: source
+    uri:  time-source-kafka
+  - name: timezone-processor
+    type: processor
+    uri:  timezone-processor-kafka
+  - name: log-sink
+    type: sink
+    uri:  log-sink-kafka
+
+stream:
+  - name: timely-stream
+    dsl: time-source | timezone-processor --timezone=Africa/Johannesburg | log-sink
+</code></pre>
+
+<p>Note that we register (using the shorthand method) the new <code>timezone-processor</code> processor app as before. We also added the new processor to the stream definition. Note that we provide the timezone we would like the input time to be converted to by specifying the <code>--timezone=Africa/Johannesburg</code> <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/index.html#_application_properties">application property</a>.</p>
+
+<h3 id="kafka-upgrade">Kafka upgrade</h3>
+
+<p>Now, before we can deploy this updated Application Group, we must upgrade Kafka 😐.
+The current stream app starters (<code>time-source</code> and <code>log-sink</code>) at version <code>1.0.4.RELEASE</code> (at time of writing), use the <a href="https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-stream-binder-kafka/1.0.3.RELEASE"><code>1.0.3.RELEASE</code></a> version of <code>spring-cloud-starter-stream-kafka</code> which includes the Kafka <em>0.8</em> client library. However, our <code>timezone-processor</code> uses the latest and greatest <code>Brooklyn.SR1</code> Spring Cloud Stream release. This release includes the <code>1.1.0.RELEASE</code> version of <code>spring-cloud-starter-stream-kafka</code> which uses the Kafka <em>0.9</em> client library.</p>
+
+<p>Problem is, the <a href="https://hub.docker.com/r/spotify/kafka/"><code>spotify/kafka</code></a> Docker image we are using is a <a href="https://github.com/spotify/docker-kafka/blob/master/kafka/Dockerfile#L7">Kafka 0.8</a> instance. Therefore, the <code>timezone-processor</code> with the newer client library (0.9) will not work with this Kafka container (0.8).</p>
+
+<p>So upgrade we must!
+There are <a href="https://github.com/spotify/docker-kafka/pulls">multiple PR&rsquo;s</a> currently open to upgrade the <code>spotify/kafka</code> image to the latest Kafka version but unfortunately none of them have been merged. So to make things easier I&rsquo;ve built a Kafka 0.10.0.1 image based on <a href="https://github.com/spotify/docker-kafka/pull/56">PR #56</a> and pushed it to Docker Hub as <a href="https://hub.docker.com/r/donovanmuller/docker-kafka"><code>donovanmuller/kafka:0.10.0.1</code></a>.</p>
+
+<p>So first stop the current Kafka 0.8 container and then start an upgraded Kafka container:</p>
+
+<pre><code>$ docker stop &lt;current kafka container id&gt;
+8492d80f4a98
+$ docker run \
+  -p 2181:2181 \
+  -p 9092:9092 \
+  --env ADVERTISED_HOST=`ipconfig getifaddr en0` \
+  --env ADVERTISED_PORT=9092 \
+  donovanmuller/kafka:0.10.0.1
+...
+</code></pre>
+
+<h3 id="deploying-the-updated-things">Deploying the updated things!</h3>
+
+<p>Now the easy part, to update and redeploy our Application Group simply run:</p>
+
+<pre><code>$ ./mvnw scdf:deploy
+</code></pre>
+
+<p>once the plugin completes the deployment, you can use the Shell to inspect how the Application Group was updated by registering the new <code>timezone-processor</code> app, the <code>timely-stream</code> definition updated <em>and</em> redeployed:</p>
+
+<p><img src="app-group-deployment-timezone-2.png" alt="application group updated and redeployed" /></p>
+
+<p>We can verify that the processor has kicked in by tailing the <code>timezone-processor</code>&rsquo;s logs:</p>
+
+<pre><code>$ tail -fn500 /var/folders/79/c5g_bfkn74d_155b5cpl39q40000gn/T/spring-cloud-dataflow-1964580361911637897/timely-stream-1478905899350/timely-stream.timezone-processor/stdout_0.log
+...
+...  INFO 16450 --- [afka-listener-1] o.a.kafka.common.utils.AppInfoParser     : Kafka version : 0.9.0.1
+...  INFO 16450 --- [afka-listener-1] o.a.kafka.common.utils.AppInfoParser     : Kafka commitId : 23c69d62a0cabf06
+...  INFO 16450 --- [afka-listener-1] io.switchbit.TimezoneProcessor           : Converting time '11/12/16 01:11:10' to timezone: 'Africa/Johannesburg'
+...  INFO 16450 --- [afka-listener-1] io.switchbit.TimezoneProcessor           : Converting time '11/12/16 01:11:11' to timezone: 'Africa/Johannesburg'
+...  INFO 16450 --- [afka-listener-1] io.switchbit.TimezoneProcessor           : Converting time '11/12/16 01:11:12' to timezone: 'Africa/Johannesburg'
+...
+</code></pre>
+
+<h2 id="a-batch-task">A Batch Task</h2>
+
+<p>Now that our stream is fully implemented we need to finish off our demo application with a Spring Batch based Spring Cloud Task application. This task will read a file with a list of times (one per line) in the same format as our <code>timely-stream</code>, convert them using the same logic as our <code>timezone-processor</code> and finally write the converted times to a another file.</p>
+
+<p>Now where could we get a list of times&hellip; 🤔</p>
+
+<h3 id="tap-that-stream">Tap that stream</h3>
+
+<p>Our <code>timely-stream</code> already emits times in the correct format, so it makes sense to use that stream as a source of times for our task. We can use the <a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/index.html#spring-cloud-dataflow-stream-tap-dsl">tap feature</a> to write the converted times from the <code>timezone-processor</code> to a file using the out-of-the-box <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/file/spring-cloud-starter-stream-sink-file">File Sink</a>.</p>
+
+<p>If that sounded complicated, fear not. This has already been implemented in the <code>timely-file-tap</code> branch, so let&rsquo;s checkout that branch:</p>
+
+<pre><code>$ git checkout timely-file-tap
+</code></pre>
+
+<p>In our Application Group descriptor (<code>application-group.yml</code>) we can see our new <code>timely-file-tap</code> tap definition:</p>
+
+<pre><code>apps:
+  - name: time-source
+    type: source
+    uri:  time-source-kafka
+  - name: timezone-processor
+    type: processor
+    uri:  timezone-processor-kafka
+  - name: log-sink
+    type: sink
+    uri:  log-sink-kafka
+  - name: file-sink
+    type: sink
+    uri:  file-sink-kafka
+
+stream:
+  - name: timely-stream
+    dsl: time-source | timezone-processor --timezone=Africa/Johannesburg | log-sink
+  - name: timely-file-tap
+    dsl: :timely-stream.timezone-processor &gt; file-sink --file.directory=/tmp --file.mode=APPEND --file.name=times
+</code></pre>
+
+<p>we create a new stream definition with the tap&rsquo;s name of <code>timely-file-tap</code> and the tap definition <code>:timely-stream.timezone-processor &gt; file-sink ...</code>. We send the tapped messages from the <code>timezone-processor</code> of the <code>timely-stream</code> stream, to the <code>file-sink</code> registered app (added in the <code>apps</code> section above as well as a <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-file-tap/application-group/pom.xml#L45"><code>&lt;dependency&gt;</code></a> in the POM). The application properties added to <code>file-sink</code> tell the app to write all messages to the <code>/tmp/times</code> file and append any messages received to the same file.</p>
+
+<h4 id="deploy-the-all-the-taps">Deploy the all the taps!</h4>
+
+<p>As usual, to register the new <code>file-sink</code> app, update the Application Group and stream definition and redeploy all the apps, simply issue the usual command of:</p>
+
+<pre><code>$ ./mvnw scdf:deploy
+</code></pre>
+
+<p>and verify using the Shell:</p>
+
+<p><img src="app-group-tap-deployment-1.png" alt="tap added deployment" /></p>
+
+<p>you can verify that the <code>timely-file-tap</code> is working by tailing the <code>/tmp/times</code> file:</p>
+
+<pre><code>$ tail /tmp/times
+11/09/16 02:21:45
+11/09/16 02:21:46
+11/09/16 02:21:47
+...
+$
+</code></pre>
+
+<h3 id="job-creation">Job creation</h3>
+
+<p>Great, so now we have our input file for our soon to be written batch job to process. Luckily that&rsquo;s already been implemented in the <code>timely-task</code> branch, so let&rsquo;s check that out:</p>
+
+<pre><code>$ git checkout timely-task
+</code></pre>
+
+<h4 id="timezone-converter">Timezone Converter</h4>
+
+<p>A few things to note before we dig into the task implementation. The logic to convert the times has been extracted into it&rsquo;s own <a href="https://github.com/donovanmuller/timely-application-group/tree/timely-task/timezone-converter"><code>timezone-converter</code></a> module, so we don&rsquo;t have to duplicate the functionality in the batch job&rsquo;s processor. This module will be <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timezone-converter/src/main/java/io/switchbit/TimezoneConverterConfiguration.java">auto configured</a> by Spring when included as a dependency.</p>
+
+<h4 id="time-task">Time Task</h4>
+
+<p>Now let&rsquo;s examine the new <a href="https://github.com/donovanmuller/timely-application-group/tree/timely-task/timely-task"><code>timely-task</code></a> module which is where our Spring Batch job is configured. <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timezone-converter/src/main/java/io/switchbit/TimezoneConverterConfiguration.java"><code>TimezoneJobConfiguration</code></a> defines a run of the mill, one step Spring Batch job configuration that:</p>
+
+<ul>
+<li><a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timely-task/src/main/java/io/switchbit/TimezoneJobConfiguration.java#L62">reads</a> an <code>inputFile</code> specified as a job parameter, in the process, mapping each line to a <code>TimelyTime</code> bean</li>
+<li>then a <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timely-task/src/main/java/io/switchbit/TimezoneJobConfiguration.java#L71">processor</a> which invokes the <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timely-task/src/main/java/io/switchbit/TimezoneJobConfiguration.java#L95"><code>timezoneConverter</code></a> to convert the <code>originalTime</code> to the <code>timezone</code> specified as a job parameter and save the converted time as well as the timezone used, back on the <code>TimelyTime</code> bean instance</li>
+<li>and finally a <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timely-task/src/main/java/io/switchbit/TimezoneJobConfiguration.java#L80">writer</a> which, in chunks of 10, writes the converted <code>TimelyTime</code> beans to an <code>outputFile</code>, also specified as a job parameter</li>
+</ul>
+
+<pre><code>/**
+ * A Spring Batch Job ('timezone-task') configuration to:
+ *
+ * &lt;ol&gt;
+ *     &lt;li&gt;Read a file specified by the 'inputFile' job parameter&lt;/li&gt;
+ *     &lt;li&gt;Process each line (representing a time) of the file by converting each time to the timezone specified
+ *     by the 'timezone' job parameter&lt;/li&gt;
+ *     &lt;li&gt;Write the converted times to a file specified by the 'outputFile' job parameter&lt;/li&gt;
+ * &lt;/ol&gt;
+ */
+@Configuration
+public class TimezoneJobConfiguration {
+
+    @Autowired
+    private JobBuilderFactory jobBuilderFactory;
+
+    @Autowired
+    private StepBuilderFactory stepBuilderFactory;
+
+    @Bean
+    public Job job(Step timezone) throws Exception {
+        return jobBuilderFactory.get(&quot;timezone-task&quot;)
+                .incrementer(new RunIdIncrementer())
+                .start(timezone)
+                .build();
+    }
+
+    @Bean
+    public Step timezoneConversion(FlatFileItemReader&lt;TimelyTime&gt; reader,
+            ItemProcessor&lt;TimelyTime, TimelyTime&gt; itemProcessor,
+            ItemWriter&lt;TimelyTime&gt; writer) {
+        return stepBuilderFactory.get(&quot;timezone-conversion&quot;)
+                .&lt;TimelyTime, TimelyTime&gt;chunk(10)
+                .reader(reader)
+                .processor(itemProcessor)
+                .writer(writer)
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public FlatFileItemReader&lt;TimelyTime&gt; reader(@Value(&quot;#{jobParameters[inputFile]}&quot;) String inputFile) {
+        FlatFileItemReader&lt;TimelyTime&gt; reader = new FlatFileItemReader&lt;&gt;();
+        reader.setResource(new FileSystemResource(inputFile));
+        reader.setLineMapper((line, lineNumber) -&gt; new TimelyTime(line));
+        return reader;
+    }
+
+    @Bean
+    @StepScope
+    public ItemProcessor&lt;TimelyTime, TimelyTime&gt; timezoneProcessor(TimezoneConverter timezoneConverter,
+            @Value(&quot;#{jobParameters[timezone]}&quot;) String timezone) {
+        return timelyTime -&gt; timelyTime.converted(
+                timezoneConverter.convert(timelyTime.getOriginalTime()),
+                timezone);
+    }
+
+    @Bean
+    @StepScope
+    public FlatFileItemWriter&lt;TimelyTime&gt; writer(@Value(&quot;#{jobParameters[outputFile]}&quot;) String outputFile) {
+        FlatFileItemWriter&lt;TimelyTime&gt; writer = new FlatFileItemWriter&lt;&gt;();
+        writer.setResource(new FileSystemResource(outputFile));
+
+        FormatterLineAggregator&lt;TimelyTime&gt; lineAggregator = new FormatterLineAggregator&lt;&gt;();
+        BeanWrapperFieldExtractor&lt;TimelyTime&gt; fieldExtractor = new BeanWrapperFieldExtractor&lt;&gt;();
+        fieldExtractor.setNames(new String[] {&quot;originalTime&quot;, &quot;convertedTime&quot;, &quot;timezone&quot;});
+        lineAggregator.setFieldExtractor(fieldExtractor);
+        lineAggregator.setFormat(&quot;%s [UTC] -&gt; %s [%s]&quot;);
+        writer.setLineAggregator(lineAggregator);
+        return writer;
+    }
+
+    @Bean
+    @StepScope
+    public TimezoneConverter timezoneConverter(@Value(&quot;#{jobParameters[timezone]}&quot;) String timezone) {
+        TimezoneConfigurationProperties timezoneConfigurationProperties = new TimezoneConfigurationProperties();
+        timezoneConfigurationProperties.setTimezone(timezone);
+        return new TimezoneConverter(timezoneConfigurationProperties);
+    }
+}
+</code></pre>
+
+<p>and that&rsquo;s about it really. <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/timely-task/src/main/java/io/switchbit/Application.java#L10"><code>@EnableTask</code></a> will take care of the Spring Cloud Task related chores of recording the execution of the job and so forth, so nothing more to see here.</p>
+
+<h4 id="triggering-the-task">Triggering the task</h4>
+
+<p>Now we need a way of triggering our <code>timely-task</code>.
+We&rsquo;ll do that using the out-of-the-box <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/triggertask/spring-cloud-starter-stream-source-triggertask">Trigger Task</a> Source application. The Trigger Task app can send a <code>TaskLaunchRequest</code> message at predefined intervals or based on a cron expression. Given that our requirements were to trigger our task every 60 seconds, the interval based approach will work nicely.</p>
+
+<p>If you&rsquo;re not familiar with Spring Cloud Task in the context of Data Flow, you might be wondering what consumes this <code>TaskLaunchRequest</code> message and how our task gets launched? Well, we need one more app to do that for us, the out-of-the-box <a href="https://github.com/spring-cloud/spring-cloud-stream-app-starters/tree/master/tasklauncher/spring-cloud-starter-stream-sink-tasklauncher-local">Task Launcher Local</a> Sink. This app consumes the <code>TaskLaunchRequest</code> message and launches the specified task locally, similar to how the Spring Cloud Deployer Local server launches apps.</p>
+
+<p>The only thing left then is to add another stream definition (<code>timely-task</code>) to wire up these two apps to trigger our <code>timely-task</code> task. This has already been done in the application group descriptor file (<a href="https://github.com/donovanmuller/timely-application-group/blob/timely-task/application-group/src/main/resources/application-group.yml#L34"><code>application-group.yml</code></a>):</p>
+
+<pre><code>apps:
+  - name: time-source
+    type: source
+    uri:  time-source-kafka
+  - name: timezone-processor
+    type: processor
+    uri:  timezone-processor-kafka
+  - name: log-sink
+    type: sink
+    uri:  log-sink-kafka
+  - name: file-sink
+    type: sink
+    uri:  file-sink-kafka
+  - name: trigger-task
+    type: source
+    uri:  triggertask-source-kafka
+  - name: tasklauncher-local
+    type: sink
+    uri:  task-launcher-local-sink-kafka
+
+stream:
+  - name: timely-stream
+    dsl: time-source | timezone-processor --timezone=Africa/Johannesburg | log-sink
+  - name: timely-file-tap
+    dsl: :timely-stream.timezone-processor &gt; file-sink --file.directory=/tmp --file.mode=APPEND --file.name=times
+  - name: timely-task
+    dsl: trigger-task --fixed-delay=60 --uri=maven://io.switchbit:timely-task:1.0-SNAPSHOT --command-line-args=&quot;inputFile=/tmp/times timezone=Africa/Johannesburg outputFile=/tmp/times-converted&quot; | tasklauncher-local
+</code></pre>
+
+<p>as before, we&rsquo;ve added the <code>trigger-task</code> and <code>tasklauncher-local</code> apps to our POM as dependencies, which allows us to add them to the <code>apps</code> section using their shorthand URI&rsquo;s.</p>
+
+<p>We then have our new <code>timely-task</code> stream definition, which wires the <code>trigger-task</code> and <code>tasklauncher-local</code> apps together, specifying the application properties of:</p>
+
+<ul>
+<li><code>--fixed-delay=60</code> - Trigger the configured task every 60 seconds</li>
+<li><code>--uri=maven://io.switchbit:timely-task:1.0-SNAPSHOT</code> - Resource URI of the task that will be launched</li>
+<li><code>--command-line-args=&quot;inputFile=/tmp/times timezone=Africa/Johannesburg outputFile=/tmp/times-converted&quot;</code> - The command line arguments to be passed to that launched task. Which in the case of Spring Batch based tasks, get translated into job parameters. The job parameters are:
+
+<ul>
+<li><code>inputFile=/tmp/times</code> - this is the file that the <code>timely-file-tap</code> is appending to and which will contain times as produced by the <code>time-source</code></li>
+<li><code>timezone=Africa/Johannesburg</code> - which is the timezone to convert the times in the <code>inputFile</code> too</li>
+<li><code>outputFile=/tmp/times-converted</code> - where to write the file with converted times</li>
+</ul></li>
+</ul>
+
+<h3 id="deploy-that-batch">Deploy that batch!</h3>
+
+<p>Deploying is the easy part, our friend:</p>
+
+<pre><code>$ ./mvnw scdf:deploy
+</code></pre>
+
+<p>and once again, verify with the Shell:</p>
+
+<p><img src="app-group-task-deployment-1.png" alt="task trigger deployment" /></p>
+
+<p>if you check the logs of the <code>trigger-task</code> instance, you should see log entries related to the launching of our <code>timely-task</code>:</p>
+
+<pre><code>$  tail -fn500 /var/folders/79/c5g_bfkn74d_155b5cpl39q40000gn/T/spring-cloud-dataflow-5259841708523915450/timely-task-1478811926374/timely-task.tasklauncher-local/stdout_0.log
+
+...  INFO 12697 --- [ kafka-binder-1] o.s.c.task.launcher.TaskLauncherSink     : Launching Task for the following resource TaskLaunchRequest{uri='maven://io.switchbit:timely-task:1.0-SNAPSHOT', commandlineArguments=[inputFile=/tmp/times, timezone=Africa/Johannesburg, outputFile=/tmp/times-converted], environmentProperties={}, deploymentProperties={}}
+...  INFO 12697 --- [ kafka-binder-1] o.s.c.d.spi.local.LocalTaskLauncher      : launching task Task--1952322854
+   Logs will be in /var/folders/79/c5g_bfkn74d_155b5cpl39q40000gn/T/spring-cloud-dataflow-3911458145370420995/Task--1952322854-1478812145868/Task--1952322854
+</code></pre>
+
+<p>and you should be able to view the output file of our job once a job has been run successfully:</p>
+
+<pre><code>$ cat /tmp/times-converted
+11/11/16 01:12:07 [UTC] -&gt; 11/11/16 03:12:07 [Africa/Johannesburg]
+11/11/16 01:12:08 [UTC] -&gt; 11/11/16 03:12:08 [Africa/Johannesburg]
+11/11/16 01:12:09 [UTC] -&gt; 11/11/16 03:12:09 [Africa/Johannesburg]
+...
+</code></pre>
+
+<h2 id="streaming-the-task-events">Streaming the task events</h2>
+
+<p>One final requirement and we&rsquo;re done!
+When a Spring Cloud Task is executed it can emit <a href="http://docs.spring.io/spring-cloud-task/docs/current/reference/htmlsingle/#stream-integration-events">events</a> to a Spring Cloud Stream channel, what&rsquo;s more, if the task is a Spring Batch based job, then Spring Batch related events can be emitted.</p>
+
+<p>We would like to consume those events as our <code>timely-task</code> executes and provide a web endpoint where a HTTP client can stream those events for viewing. Turns out that&rsquo;s actually pretty easy and already done on the <code>timely-events</code> branch, so check that out now:</p>
+
+<pre><code>$ git checkout timely-events
+</code></pre>
+
+<h3 id="centralising-the-config">Centralising the config</h3>
+
+<p>Before we walk through the web app that will consume the task/batch events and the changes to the <code>timely-task</code> to emit those events, let&rsquo;s add support for centralising not only the configuration of our apps but also our Data Flow server.</p>
+
+<p>The Data Flow server and out-of-the-box apps all have built in support for <a href="https://cloud.spring.io/spring-cloud-config/">Spring Cloud Config</a>, which allows you to centralise the configuration of applications. Let&rsquo;s make use of that feature by standing up a local config server and providing a Git repository where we will configure various options for the server and apps. You might have noticed the <a href="https://github.com/donovanmuller/timely-application-group/tree/timely-events/config-server"><code>config-server</code></a> module, which as luck would have it, is ready and configured for just that purpose. Stand up an instance with:</p>
+
+<pre><code>$ mvn spring-boot:run -pl config-server
+...
+...  INFO 14130 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8888 (http)
+...  INFO 14130 --- [           main] io.switchbit.Application                 : Started Application in 4.533 seconds (JVM running for 7.9)
+</code></pre>
+
+<p>the config server will be running on <a href="http://localhost:8888">http://localhost:8888</a>, which is the default endpoint for config clients.</p>
+
+<h4 id="the-configuration">The configuration</h4>
+
+<p>The following GitHub repository contains the configurations for the various applications as well as our Data Flow server:</p>
+
+<p><a href="https://github.com/donovanmuller/timely-application-group-configuration">https://github.com/donovanmuller/timely-application-group-configuration</a></p>
+
+<p>the configurations are defined per application by their <a href="https://github.com/donovanmuller/timely-application-group/blob/timely-events/config-server/src/main/resources/application.yml#L9"><code>spring.application.name</code></a> property. So let&rsquo;s look into the Data Flow server&rsquo;s configuration (<a href="https://github.com/donovanmuller/timely-application-group-configuration/blob/master/spring-cloud-dataflow-server-local/application.yml"><code>spring-cloud-dataflow-server-local/application.yml</code></a>):</p>
+
+<pre><code>spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/scdf
+    username: scdf
+    password: scdf
+    driver-class-name: org.postgresql.Driver
+  cloud:
+    dataflow.features.application-groups-enabled: true
+</code></pre>
+
+<p>Surprise! The boot datasource configuration is provided for a Postgres database, which means we&rsquo;re going to connect our local Data Flow server to a persistent database and not the in-memory H2 default. Why? Well, there is a really neat feature in Data Flow that allows you to view the historical (and current) task executions. For example, in the Shell issue this command:</p>
+
+<pre><code>dataflow:&gt;job execution list
+╔═══╤═══════╤═════════╤═══════════╤═════════════════════╤══════════════════╗
+║ID │Task ID│Job Name │Start Time │Step Execution Count │Definition Status ║
+╚═══╧═══════╧═════════╧═══════════╧═════════════════════╧══════════════════╝
+
+dataflow:&gt;
+</code></pre>
+
+<p>nothing. Even though, as you are reading this, there are probably tasks being triggered and launched. So why don&rsquo;t we see the executions?</p>
+
+<p>The task/batch executions can only be recorded if a persistent (not the default in-memory H2) <a href="http://docs.spring.io/spring-cloud-task/docs/current/reference/htmlsingle/#features-data-source">datasource is configured</a>. What&rsquo;s more, it should be the same datasource as used by the Data Flow server.</p>
+
+<h4 id="postgres-datasource">Postgres datasource</h4>
+
+<p>With that in mind, let&rsquo;s start a Postgres database instance up to act as our datasource for both Data Flow server and our <code>timely-task</code> application. The easiest way to do this, is to start a Postgres Docker container with:</p>
+
+<pre><code>$ docker run \
+  -p 5432:5432 \
+  -e POSTGRES_USER=scdf \
+  -e POSTGRES_PASSWORD=scdf \
+  -e POSTGRES_DB=scdf \
+  postgres:9
+</code></pre>
+
+<p>Note the username (<code>POSTGRES_USER</code>), password (<code>POSTGRES_PASSWORD</code>) and database (<code>POSTGRES_DB</code>) name match those of the datasource configuration above.</p>
+
+<h4 id="restarting-the-data-flow-server">Restarting the Data Flow server</h4>
+
+<p>Our config server is up and our new Git based configuration is waiting, all we have to do is kill the current server instance and restart it:</p>
+
+<pre><code>...  INFO 12538 --- [nio-9393-exec-2] o.s.c.d.spi.local.LocalAppDeployer       : deploying app timely-task.trigger-task instance 0
+   Logs will be in /var/folders/79/c5g_bfkn74d_155b5cpl39q40000gn/T/spring-cloud-dataflow-5259841708523915450/timely-task-1478811927332/timely-task.trigger-task
+
+Ctrl + C
+
+...  INFO 12538 --- [       Thread-9] ationConfigEmbeddedWebApplicationContext : Closing org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext@2a5ca609: startup date [Thu Nov 10 23:04:36 SAST 2016]; parent: org.springframework.context.annotation.AnnotationConfigApplicationContext@3830f1c0
+...
+...  INFO 12538 --- [       Thread-9] o.s.s.c.ThreadPoolTaskScheduler          : Shutting down ExecutorService 'taskScheduler'
+...
+...  INFO 12538 --- [       Thread-9] o.s.c.d.spi.local.LocalAppDeployer       : un-deploying app timely-stream.timezone-processor instance 0
+...
+
+$ java -jar spring-cloud-dataflow-server-local-1.1.0.BUILD-SNAPSHOT.jar
+...
+</code></pre>
+
+<p>when you stop your local server, all apps should be undeployed. Note that when we start the server again, we no longer need to add the <code>--spring.cloud.dataflow.features.application-groups-enabled=true</code> command line argument because this gets populated from the config server now.</p>
+
+<h4 id="redeploy-all-the-things-again">Redeploy all the things! Again!</h4>
+
+<p>Let&rsquo;s get back up to where we left off (well, a little further really&hellip;) by deploying our application group once more:</p>
+
+<pre><code>$ ./mvnw scdf:deploy
+</code></pre>
+
+<p>once again, let&rsquo;s verify that our Application Group has been deployed successfully, using the Shell:</p>
+
+<p><img src="app-group-config-server-deployment-1.png" alt="application group with config server deployment" /></p>
+
+<p>and as expected, all our streams and standalone application have been deployed successfully.</p>
+
+<h4 id="revisiting-job-executions">Revisiting Job Executions</h4>
+
+<p>If we now have a look at the job executions now (maybe give it a minute after a fresh deploy) using the Shell:</p>
+
+<pre><code>dataflow:&gt;job execution list
+╔═══╤═══════╤═════════════╤═════════════════════════════╤═════════════════════╤══════════════════╗
+║ID │Task ID│  Job Name   │         Start Time          │Step Execution Count │Definition Status ║
+╠═══╪═══════╪═════════════╪═════════════════════════════╪═════════════════════╪══════════════════╣
+║1  │1      │timezone-task│Fri Nov 11 21:56:20 SAST 2016│1                    │Destroyed         ║
+╚═══╧═══════╧═════════════╧═════════════════════════════╧═════════════════════╧══════════════════╝
+
+dataflow:&gt;job execution list
+╔═══╤═══════╤═════════════╤═════════════════════════════╤═════════════════════╤══════════════════╗
+║ID │Task ID│  Job Name   │         Start Time          │Step Execution Count │Definition Status ║
+╠═══╪═══════╪═════════════╪═════════════════════════════╪═════════════════════╪══════════════════╣
+║1  │1      │timezone-task│Fri Nov 11 21:56:20 SAST 2016│1                    │Destroyed         ║
+╚═══╧═══════╧═════════════╧═════════════════════════════╧═════════════════════╧══════════════════╝
+
+dataflow:&gt;
+</code></pre>
+
+<p>we can now see that the task/job executions are recorded. This is thanks to our Data Flow server and our <code>timely-task</code> using the Postgres container instance as a datasource. We haven&rsquo;t mentioned the <code>timely-task</code> configuration of this datasource but that&rsquo;s just because it&rsquo;s configured exactly the same way as the Data Flow server, using the <a href="https://github.com/donovanmuller/timely-application-group-configuration"><code>timely-application-group-configuration</code></a> GitHub repository in the <a href="https://github.com/donovanmuller/timely-application-group-configuration/blob/master/timely-task/application.yml"><code>timely-task/application.yml</code></a> file which will be served up by the config server.</p>
+
+<p>Just as a closing thought on job executions, the <a href="http://localhost:9393/dashboard/index.html#/jobs/executions">Data Flow server UI</a> includes much more information than the Shell, below are a few screenshots showing some of the details available:</p>
+
+<p><img src="app-group-job-execution-detail-1.png" alt="job execution list" /></p>
+
+<p><img src="app-group-job-execution-detail-2.png" alt="job execution details" /></p>
+
+<p><img src="app-group-job-execution-detail-3.png" alt="job execution details - step" /></p>
+
+<p><img src="app-group-job-execution-detail-5.png" alt="job execution details - step progress" /></p>
+
+<h4 id="a-timely-event">A timely event</h4>
+
+<p>For the astute reader, you would have noticed that there was an extra application registered and deployed when we deployed the <code>timely-event</code> branch version of the Application Group descriptor. The application is a standalone Spring Cloud Stream web application that binds to the <code>timely-events</code> channel and broadcasts any events emitted by our <code>timely-task</code> job to any subscribed HTTP clients using Server Side Events.</p>
+
+<p>If you look at the descriptor file:</p>
+
+<pre><code>apps:
+  - name: time-source
+    type: source
+    uri:  time-source-kafka
+  - name: timezone-processor
+    type: processor
+    uri:  timezone-processor-kafka
+  - name: log-sink
+    type: sink
+    uri:  log-sink-kafka
+  - name: file-sink
+    type: sink
+    uri:  file-sink-kafka
+  - name: trigger-task
+    type: source
+    uri:  triggertask-source-kafka
+  - name: tasklauncher-local
+    type: sink
+    uri:  task-launcher-local-sink-kafka
+  - name: timely-events
+    type: standalone
+    uri:  timely-events
+
+standalone:
+  - name: timely-events
+    dsl: timely-events --server.port=8080
+
+...
+</code></pre>
+
+<p>you&rsquo;ll see the <code>timely-events</code> app registered and a new <code>standalone</code> section containing the definition of our <code>timely-events</code> standalone application (see <a href="https://blog.switchbit.io/introducing-standalone-applications-to-spring-cloud-data-flow/">this blog post</a> introducing the standalone application type).</p>
+
+<p>We can test out the event streaming of the <code>timely-events</code> application using <code>curl</code>:</p>
+
+<pre><code>$ curl http://localhost:8080/events/subscribe
+</code></pre>
+
+<p>this will connect to the <code>/events/subscribe</code> endpoint that will stream (connection will be closed after <a href="https://github.com/donovanmuller/timely-application-group-configuration/blob/master/timely-events/application.yml#L3">60 seconds</a>) the events emitted by our <code>timely-task</code> job as it executes.</p>
+
+<p><img src="timely-events-sse-output-1.png" alt="SSE streamed events" /></p>
+
+<p>The <a href="http://docs.spring.io/spring-cloud-task/docs/current/reference/htmlsingle/#stream-integration-batch-events">Spring Batch events</a> are normally emitted to a channel per listener, however, for simplicity, we <a href="https://github.com/donovanmuller/timely-application-group-configuration/blob/master/timely-task/application.yml#L8">configure</a> the events to be sent to a single channel called <code>timely-events</code>. This channel becomes the <a href="https://github.com/donovanmuller/timely-application-group-configuration/blob/master/timely-events/application.yml#L1">input channel</a> for the <code>timely-events</code> application. I.e. it receives all events emitted by the Spring Batch listeners. These events then get pushed to any connected clients via <a href="http://docs.spring.io/spring/docs/current/spring-framework-reference/htmlsingle/#mvc-ann-async-sse">Server Side Events</a>.</p>
+
+<p>With that, we&rsquo;re done! 🏁</p>
+
+<h2 id="let-s-recap">Let&rsquo;s recap</h2>
+
+<p>The Application Group feature allowed us to incrementally add functionality from the most basic stream, all the way to multiple streams and a standalone application. All of this, without having to manually undeploy/destroy and define/deploy streams/standalone applications at any point. Nice.</p>
+
+<p>Hopefully this was a good demonstration of this take on the  Application Group feature. Any <a href="https://twitter.com/donovancmuller">feedback</a> welcome!</p>
+
+<blockquote>
+<p>All of the demo application&rsquo;s code is available at <a href="https://github.com/donovanmuller/timely-application-group">https://github.com/donovanmuller/timely-application-group</a></p>
+</blockquote>
+
+<h2 id="reference">Reference</h2>
+
+<p>If you would like to look deeper into some of the Spring Cloud Data Flow features used in this demo application, see below for reference:</p>
+
+<ul>
+<li><a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#_central_configuration">Central Configuration</a></li>
+<li><a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#arch-streams">Streams</a>
+
+<ul>
+<li><a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#spring-cloud-dataflow-stream-tap-dsl">Taps</a></li>
+</ul></li>
+<li><a href="http://docs.spring.io/spring-cloud-dataflow/docs/current/reference/htmlsingle/#spring-cloud-task">Tasks</a>
+
+<ul>
+<li><a href="http://docs.spring.io/spring-cloud-task/docs/current/reference/htmlsingle/#stream-integration-batch-events">Spring Batch events</a></li>
+</ul></li>
+</ul>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>

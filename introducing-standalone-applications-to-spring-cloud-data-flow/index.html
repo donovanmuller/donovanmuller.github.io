@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="generator" content="Hugo 0.40.3" />
+
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>Introducing Standalone applications to Spring Cloud Data Flow &middot; Donovan Muller</title>
+
+  
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
+
+  
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="shortcut icon" href="/favicon.png">
+
+  
+  <link href="" rel="alternate" type="application/rss+xml" title="Donovan Muller" />
+
+  <link rel="stylesheet"
+      href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.4.0/languages/yaml.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+<link type="text/css" rel="stylesheet" href="https://donovanmuller.blog/css/donovanmuller.css">
+</head>
+
+  <body class="theme-base-donovanmuller layout-reverse">
+  <div class="sidebar">
+    <div class="container sidebar-sticky">
+        <div class="sidebar-about">
+            <img src="/images/profile.png"></img>
+            <a href="https://donovanmuller.blog/">
+                <h1>Donovan Muller</h1>
+            </a>
+            <p class="lead">
+                Personal tech blog of Donovan Muller. 
+Java, Spring, Kubernetes and some stuff in between
+            </p>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="https://donovanmuller.blog/">Home</a>
+            </li>
+            <li>
+                <a href="https://stackoverflow.com/story/donovanmuller">  About </a>
+            </li>
+        </ul>
+
+        <p>&copy; 2018. All rights reserved. </p>
+    </div>
+</div>
+    <div class="content container">
+    <div class="post">
+  <h1>Introducing Standalone applications to Spring Cloud Data Flow</h1>
+  <span class="post-date">Sun, Oct 2, 2016</span>
+  
+
+<p>Spring Cloud Data Flow currently supports source, processor, sink and task application types in both stream and task definitions. This post introduces the concept of a new &lsquo;standalone&rsquo; application type. Allowing standalone (i.e. non Spring Cloud Stream) Spring Boot applications to be defined and deployed via the Spring Cloud Data Flow environment.</p>
+
+<h2 id="why-the-need-for-a-standalone-app">Why the need for a standalone app?</h2>
+
+<p>Spring Cloud Data Flow has its roots in composing data pipelines using cloud native microservices, so why would we want a standalone application type? These are my top 3 reasons:</p>
+
+<ul>
+<li>a need to deploy current/legacy Spring Boot applications in the same way we can deploy both streams and tasks</li>
+<li>standalone applications can sometimes supplement streams/tasks and therefore would benefit from being deployed in a consistent way using the same tooling/environment</li>
+<li>the Spring Cloud Data Flow tooling is rich and easily extensible, making implementing your own &ldquo;deployer server&rdquo; unappealing.</li>
+</ul>
+
+<p>In my case, the team already had a multitude of standalone Spring Boot applications being deployed via a custom CI/CD pipeline but, as we started to introduce more Spring Cloud Data Flow (henceforth referred to as SCDF) defined streams and tasks, it became apparent that having a consistent way to deploy all types of Spring Boot apps into the same environment was needed. The <a href="https://github.com/spring-cloud/spring-cloud-deployer">Spring Cloud Deployer</a> abstraction was perfect for this and initially I attempted to build a separate deployer server for standalone apps. However, it pretty soon became apparent that I was duplicating allot of effort already present in the SCDF Core project. So I ditched that, forked the SCDF repo and added the standalone application type to the core project, which turned out to be much simpler.</p>
+
+<h3 id="caveat">Caveat</h3>
+
+<p>Having said that, I&rsquo;m not sure if this application type makes sense for where the SCDF team is heading, however, it fits our purposes quite nicely and also paved the way for another feature I&rsquo;ll introduce in another post 🤔. I&rsquo;ve logged an issue to track this feature: <a href="https://github.com/spring-cloud/spring-cloud-dataflow/issues/915">spring-cloud-dataflow/issues/915</a></p>
+
+<h2 id="booting-up-in-data-flow">Booting up in Data Flow</h2>
+
+<p>Let&rsquo;s demonstrate how we define and deploy a standalone application in SCDF by way of a simple example. First, grab the following binary (a build of my fork of the <a href="https://github.com/donovanmuller/spring-cloud-dataflow/tree/standalone">spring-cloud-dataflow</a> project)</p>
+
+<pre><code>$ wget https://github.com/donovanmuller/spring-cloud-dataflow/releases/download/v1.1.0.STANDALONE-SNAPSHOT/spring-cloud-dataflow-server-local-1.1.0.BUILD-SNAPSHOT.jar
+</code></pre>
+
+<blockquote>
+<p>The <a href="[spring-cloud-dataflow](https://github.com/donovanmuller/spring-cloud-dataflow/tree/standalone)"><code>standalone</code></a> branch on my fork of <a href="https://github.com/donovanmuller/spring-cloud-dataflow/tree/standalone">spring-cloud-dataflow</a> contains the <a href="https://github.com/donovanmuller/spring-cloud-dataflow/commit/64da383ce053abee5055bd8444305fca0c5c3dc5">commits</a> implementing the standalone application type.</p>
+</blockquote>
+
+<p>We will use the local deployer for simplicity&rsquo;s sake, however, since there is nothing changed in the way apps are deployed via the Spring Cloud Deployer abstraction, all current deployer implementations should work out of the box. First, let&rsquo;s fire up a SCDF server with the local deployer support:</p>
+
+<pre><code>$ java -jar spring-cloud-dataflow-server-local-1.1.0.BUILD-SNAPSHOT.jar \
+   --spring.cloud.dataflow.features.standalone-enabled=true
+</code></pre>
+
+<p>The standalone application is implemented as an additional feature, in the same way that you can enable/disable the analytics, stream and task functionality by toggling the <a href="https://github.com/spring-cloud/spring-cloud-dataflow/blob/master/spring-cloud-dataflow-server-core/src/main/java/org/springframework/cloud/dataflow/server/config/features/FeaturesConfiguration.java#L48">feature flags</a>. By default it is disabled, hence we enable it above via the <code>--spring.cloud.dataflow.features.standalone-enabled=true</code> property.</p>
+
+<p>Now we&rsquo;ll use the <a href="https://github.com/spring-cloud/spring-cloud-dataflow/tree/master/spring-cloud-dataflow-shell">SCDF Shell</a> to define and deploy our example application. Currently, only the Shell has been augmented to include support for the standalone application type feature, based on feedback from the upstream <a href="https://github.com/spring-cloud/spring-cloud-dataflow/issues/915">proposal issue</a>, integration into the UI could be added later. To start the shell, first grab the binary (again, built from my fork of SCDF) and then start her up:</p>
+
+<pre><code>$ wget https://github.com/donovanmuller/spring-cloud-dataflow/releases/download/v1.1.0.STANDALONE-SNAPSHOT/spring-cloud-dataflow-shell-1.1.0.BUILD-SNAPSHOT.jar
+$ java -jar spring-cloud-dataflow-shell-1.1.0.BUILD-SNAPSHOT.jar
+</code></pre>
+
+<p>the SCDF server will be targeted at <a href="http://localhost:9393">http://localhost:9393</a> be default. If you push the Tab key, you should see support for <code>standalone</code> in the shell. You can type <code>standalone list</code> to verify:</p>
+
+<pre><code>dataflow:&gt;standalone list
+╔═══════════════╤═════════════════════╤══════╗
+║Standalone Name│Standalone Definition│Status║
+╚═══════════════╧═════════════════════╧══════╝
+
+dataflow:&gt;
+</code></pre>
+
+<h3 id="registering-a-standalone-application">Registering a standalone application</h3>
+
+<p>Nothing out of the ordinary here, we register a standalone application just like any other application type. For this example we&rsquo;ll register a standalone application I wrote <github repo> using the <code>maven://</code> resource.</p>
+
+<p>I haven&rsquo;t published this application to any publicly available Maven repository, so we&rsquo;ll just have to install it into our local repository. To do that, clone the example application and do a <code>mvn install</code>:</p>
+
+<pre><code>$ git clone https://github.com/donovanmuller/standalone-demo-app.git &amp;&amp; cd standalone-demo-app
+$ mvn install
+</code></pre>
+
+<p>now we can register our app in the SCDF Shell:</p>
+
+<pre><code>dataflow:&gt;app list
+No registered apps.
+You can register new apps with the 'app register' and 'app import' commands.
+
+dataflow:&gt;app register --name standalone-demo-app --type standalone --uri maven://io.switchbit:standalone-demo-app:1.0.0.BUILD-SNAPSHOT
+Successfully registered application 'standalone:standalone-demo-app'
+
+dataflow:&gt;app list
+╔══════╤═════════╤════╤════╤═══════════════════╗
+║source│processor│sink│task│    standalone     ║
+╠══════╪═════════╪════╪════╪═══════════════════╣
+║      │         │    │    │standalone-demo-app║
+╚══════╧═════════╧════╧════╧═══════════════════╝
+
+dataflow:&gt;
+</code></pre>
+
+<p><code>app list</code> confirms that our app is registered (note the &lsquo;standalone&rsquo; application type).</p>
+
+<h3 id="define-our-standalone-application">Define our standalone application</h3>
+
+<p>Sticking with the concept of defining stream and tasks, we need to define a standalone definition for our registered app. This allows us to configure the same standalone app in a few different configurations. Admittedly, <em>defining</em> a standalone app is a little frivolous but having the, register once, configure for multiple usage capability could be useful (it was also just easier to implement it the same as streams/tasks 😁).</p>
+
+<pre><code>dataflow:&gt;standalone create --name demo-app-9000 --definition &quot;standalone-demo-app --server.port=9000&quot; --deploy
+Created and deployed new standalone application 'demo-app-9000'
+</code></pre>
+
+<p>with the above command we defined a new standalone definition called <code>demo-app-9000</code> using the registered <code>standalone-demo-app</code> standalone application. We also passed the <code>--server.port=9000</code> application property, specifying that this app should listen on port <code>9000</code> instead of the default 8080 and then instructed SCDF to deploy this definition immediately with <code>--deploy</code>.</p>
+
+<p>Let&rsquo;s see how it&rsquo;s doing:</p>
+
+<pre><code>dataflow:&gt;standalone list
+╔═══════════════╤══════════════════════════════════════╤════════╗
+║Standalone Name│        Standalone Definition         │ Status ║
+╠═══════════════╪══════════════════════════════════════╪════════╣
+║demo-app-9000  │standalone-demo-app --server.port=9000│deployed║
+╚═══════════════╧══════════════════════════════════════╧════════╝
+
+dataflow:&gt;
+</code></pre>
+
+<p>looks good, if you open <a href="http://localhost:9000">http://localhost:9000</a> you should see our demo app running.</p>
+
+<p><img src="standalone-9000-deployed.png" alt="" /></p>
+
+<p>Well, that was easy. Let&rsquo;s clean up house and destroy (the app will be undeployed implicitly) our standalone demo app:</p>
+
+<pre><code>dataflow:&gt;standalone destroy demo-app-9000
+Destroyed standalone application 'demo-app-9000'
+
+dataflow:&gt;runtime apps
+╔════════════════════╤═══════════╤═════════════════════════════╗
+║App Id / Instance Id│Unit Status│No. of Instances / Attributes║
+╚════════════════════╧═══════════╧═════════════════════════════╝
+
+dataflow:&gt;standalone list
+╔═══════════════╤═════════════════════╤══════╗
+║Standalone Name│Standalone Definition│Status║
+╚═══════════════╧═════════════════════╧══════╝
+
+dataflow:&gt;
+</code></pre>
+
+<h2 id="could-it-be-easier">Could it be easier?</h2>
+
+<p>Yes. Yes it could.</p>
+
+<p>It could become a little tedious registering, defining and deploying your apps all day long, especially if you&rsquo;re restarting your deployer server during development. Wouldn&rsquo;t it be great if there was a way to leverage your build tool, in this case Maven, (I&rsquo;m discussing Maven only here - sorry Gradle people) to deploy your app with SCDF?</p>
+
+<h3 id="spring-cloud-data-flow-maven-plugin">Spring Cloud Data Flow Maven Plugin</h3>
+
+<p>Fortunately that&rsquo;s exactly what the <a href="https://github.com/donovanmuller/spring-cloud-dataflow-maven-plugin"><code>spring-cloud-dataflow-maven-plugin</code></a> is for. This is a Maven plugin I wrote to make the task of deploying apps with SCDF easier while in development, as well as providing a convenient way to integrate into a CI/CD pipeline. The plugin is available via <a href="https://bintray.com/donovanmuller/switchbit-public/spring-cloud-dataflow-maven-plugin">Bintray</a>.</p>
+
+<p>When you cloned the example application, it already included the build plugin. Have at peep at the <a href="https://github.com/donovanmuller/standalone-demo-app/blob/master/pom.xml#L31"><code>pom.xml</code></a> at the <a href="https://github.com/donovanmuller/standalone-demo-app/blob/master/pom.xml#L31">plugin definition</a>:</p>
+
+<pre><code>    ...
+    &lt;build&gt;
+        &lt;plugins&gt;
+            ...
+            &lt;plugin&gt;
+                &lt;groupId&gt;io.switchbit&lt;/groupId&gt;
+                &lt;artifactId&gt;spring-cloud-dataflow-maven-plugin&lt;/artifactId&gt;
+                &lt;version&gt;1.0.0.M1&lt;/version&gt;
+                &lt;configuration&gt;
+                    &lt;applicationProperties&gt;
+                        &lt;server.port&gt;9000&lt;/server.port&gt;
+                    &lt;/applicationProperties&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+</code></pre>
+
+<p>so how does this plugin work?</p>
+
+<p>The plugin performs the following tasks:</p>
+
+<ul>
+<li>by default this plugin will execute the <code>install</code> Maven phase first, this is perfect for our local example but you might have to execute the <code>deploy</code> goal (e.g. <code>mvn deploy scdf:deploy-standalone</code>) before this plugin if you need to publish your app to a remote Maven repository (which you&rsquo;ll configure on your deployer implementation)</li>
+<li>first step is to register your app:
+
+<ul>
+<li>using <a href="https://github.com/donovanmuller/standalone-demo-app/blob/master/pom.xml#L10"><code>${project.name}</code></a> as the app name</li>
+<li>and building the <code>uri</code> from the <code>groupId</code>, <code>artifactId</code> and <code>version</code> of the encompassing <code>pom.xml</code></li>
+</ul></li>
+<li>next, create the app definition, using the optional <a href="https://github.com/donovanmuller/standalone-demo-app/blob/master/pom.xml#L36"><code>applicationProperties</code></a></li>
+<li>and finally deploy that definition, providing the optional <code>deploymentProperties</code> to the deployer</li>
+</ul>
+
+<p>Basically, the plugin would execute the following (as if entered via the Shell):</p>
+
+<pre><code>dataflow:&gt;app register --name standalone-demo-app --type standalone --uri maven://io.switchbit:standalone-demo-app:1.0.0.BUILD-SNAPSHOT --force
+
+dataflow:&gt;standalone create --name demo-app-9000 --definition &quot;standalone-demo-app --server.port=9000&quot;
+
+dataflow:&gt;standalone deploy demo-app-9000
+</code></pre>
+
+<p>Below is a quick video showing the above.</p>
+
+<iframe width="100%" height="315" src="https://www.youtube.com/embed/VTcijIhuaGQ" frameborder="0" allowfullscreen></iframe>
+
+<h2 id="wrapping-up">Wrapping up</h2>
+
+<p>This was a quick demonstration of the <em>standalone</em> application type introduced to Spring Cloud Data Flow. We saw how easy it was to orchestrate a Spring Boot app via the Shell and even easier, using the <code>spring-cloud-dataflow-maven-plugin</code> to deploy straight from your IDE, console or build pipeline.</p>
+
+<p>As mentioned initially, this feature is simply a proposal and it&rsquo;s fit within Spring Cloud Data Flow is up for debate. However, we will use this feature internally and therefore I will strive to maintain compatibility with the upstream project, despite the fact that it might never make it into SCDF. You can track the progress under this issue: <a href="https://github.com/spring-cloud/spring-cloud-dataflow/issues/915">spring-cloud-dataflow/issues/915</a></p>
+
+<p>Any <a href="https://twitter.com/donovancmuller">feedback</a>/enhancements welcome!</p>
+
+<h2 id="what-s-next">What&rsquo;s Next</h2>
+
+<p>With this new feature, we can orchestrate standalone, stream and task application definitions with Spring Cloud Data Flow but how about orchestrating any <em>combination</em> of these related application types using one resource, something like&hellip; an application group? 🤔 Check out the upcoming post&hellip;</p>
+
+</div>
+
+
+    </div>
+
+    
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-121354786-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='//www.google-analytics.com/analytics.js'></script>
+
+  </body>
+</html>
